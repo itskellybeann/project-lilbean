@@ -86,6 +86,14 @@ This follows the same pattern as your other `/volume1/docker/<service>/` contain
    Screen" (iOS) or "Install app" (Android/Chrome). It behaves like a native app —
    own icon, own window, works offline for the app shell.
 
+   Note: the shipped icon (`web/public/icons/icon.svg`) is a plain placeholder
+   (black square, pink circle) kept as SVG so it could be committed through this
+   session's push path. iOS's "Add to Home Screen" wants a raster icon, so it'll
+   fall back to a screenshot-based icon on iPhone until you drop real
+   `icon-192.png` / `icon-512.png` files in that folder and point
+   `web/index.html`'s `apple-touch-icon` link and `vite.config.ts`'s manifest
+   icons back at them.
+
 ### Backups
 
 The `db-backup` container runs `pg_dump` nightly at 03:00 into `./backups/`
