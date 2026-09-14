@@ -141,3 +141,9 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# LilBean runtime data (NAS-mounted volumes, generated at deploy time)
+/data/
+/backups/
+server/uploads/photos/*
+!server/uploads/photos/.gitkeep
