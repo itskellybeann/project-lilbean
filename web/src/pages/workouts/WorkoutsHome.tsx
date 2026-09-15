@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import TopBar from "../../components/TopBar";
 import { api } from "../../api/client";
+import { kgToLb } from "../../lib/units";
 
 interface MuscleVolume {
   muscleGroup: string;
@@ -15,7 +16,9 @@ export default function WorkoutsHome() {
   const [muscleVolume, setMuscleVolume] = useState<MuscleVolume[]>([]);
 
   useEffect(() => {
-    api.get<MuscleVolume[]>("/dashboard/muscle-volume?days=7").then(setMuscleVolume);
+    api
+      .get<MuscleVolume[]>("/dashboard/muscle-volume?days=7")
+      .then((data) => setMuscleVolume(data.map((d) => ({ ...d, volume: Math.round(kgToLb(d.volume)) }))));
   }, []);
 
   async function startBlank() {
@@ -58,7 +61,7 @@ export default function WorkoutsHome() {
 
         {muscleVolume.length > 0 && (
           <div className="card">
-            <p className="text-sm font-semibold mb-2">Volume by muscle group (7 days)</p>
+            <p className="text-sm font-semibold mb-2">Volume by muscle group (7 days, lbs)</p>
             <ResponsiveContainer width="100%" height={Math.max(120, muscleVolume.length * 34)}>
               <BarChart data={muscleVolume} layout="vertical" margin={{ left: 8 }}>
                 <XAxis type="number" stroke="#666" fontSize={11} tickLine={false} />

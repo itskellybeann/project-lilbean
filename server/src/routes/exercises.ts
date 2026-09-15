@@ -89,7 +89,11 @@ exercisesRouter.get("/:id/stats", async (req: AuthedRequest, res) => {
   // Progressive overload suggestion, based on the heaviest set from the most
   // recent workout that included this exercise: more reps than a normal working
   // set suggests adding a little weight next time; fewer suggests chasing a rep.
-  let suggestion: { weightKg: number; reps: number; note: string } | null = null;
+  // Weights are returned raw (kg) with no formatted sentence — units and
+  // rounding for display are the client's job, not the API's.
+  let suggestion:
+    | { weightKg: number; reps: number; lastWeightKg: number; lastReps: number; kind: "weight" | "reps" }
+    | null = null;
   if (lastWorkoutId) {
     const lastWorkoutSets = sets.filter((s) => s.workoutId === lastWorkoutId);
     const topSet = lastWorkoutSets.reduce((best, s) => (s.weightKg > best.weightKg ? s : best), lastWorkoutSets[0]);
@@ -98,13 +102,17 @@ exercisesRouter.get("/:id/stats", async (req: AuthedRequest, res) => {
         suggestion = {
           weightKg: Math.round((topSet.weightKg + 2.5) * 10) / 10,
           reps: topSet.reps,
-          note: `Last time: ${topSet.weightKg}kg × ${topSet.reps}. Try adding weight.`,
+          lastWeightKg: topSet.weightKg,
+          lastReps: topSet.reps,
+          kind: "weight",
         };
       } else {
         suggestion = {
           weightKg: topSet.weightKg,
           reps: topSet.reps + 1,
-          note: `Last time: ${topSet.weightKg}kg × ${topSet.reps}. Try one more rep.`,
+          lastWeightKg: topSet.weightKg,
+          lastReps: topSet.reps,
+          kind: "reps",
         };
       }
     }

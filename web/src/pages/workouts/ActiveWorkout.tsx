@@ -5,6 +5,7 @@ import ExerciseLibrary from "./ExerciseLibrary";
 import PlateCalculator from "../../components/PlateCalculator";
 import { api } from "../../api/client";
 import { enqueueMutation, isQueued, OFFLINE_SYNC_EVENT, queueForPath, removeFromQueue } from "../../offline/queue";
+import { formatLb, lbToKg } from "../../lib/units";
 
 interface SetRow {
   id: string;
@@ -27,7 +28,13 @@ interface WorkoutData {
 }
 
 interface ExerciseSuggestion {
-  suggestion: { weightKg: number; reps: number; note: string } | null;
+  suggestion: {
+    weightKg: number;
+    reps: number;
+    lastWeightKg: number;
+    lastReps: number;
+    kind: "weight" | "reps";
+  } | null;
 }
 
 function useRestTimer() {
@@ -187,7 +194,7 @@ export default function ActiveWorkout() {
     const payload = {
       exerciseId: activeExercise.id,
       setNumber,
-      weightKg: Number(weight),
+      weightKg: lbToKg(Number(weight)),
       reps: Number(reps),
       rpe: rpe ? Number(rpe) : null,
       supersetId,
@@ -294,13 +301,15 @@ export default function ActiveWorkout() {
 
               {suggestion && (
                 <p className="text-xs text-bean-300 bg-bean-500/10 rounded-lg px-2.5 py-1.5 mb-2">
-                  💡 {suggestion.note} Try {suggestion.weightKg}kg × {suggestion.reps}.
+                  💡 Last time: {formatLb(suggestion.lastWeightKg)}lb × {suggestion.lastReps}. Try{" "}
+                  {suggestion.kind === "weight" ? "adding weight" : "one more rep"}:{" "}
+                  {formatLb(suggestion.weightKg)}lb × {suggestion.reps}.
                 </p>
               )}
 
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="label">Weight (kg)</label>
+                  <label className="label">Weight (lbs)</label>
                   <input className="input" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
                 </div>
                 <div>
@@ -313,7 +322,7 @@ export default function ActiveWorkout() {
                 </div>
               </div>
               <div className="mt-2">
-                <PlateCalculator weightKg={Number(weight) || 0} />
+                <PlateCalculator weightLb={Number(weight) || 0} />
               </div>
               <button className="btn-primary w-full mt-3" onClick={logSet}>
                 Log set
@@ -335,7 +344,7 @@ export default function ActiveWorkout() {
                     {sets.map((s) => (
                       <div key={s.id} className="flex items-center justify-between text-sm">
                         <span>
-                          Set {s.setNumber}: {s.weightKg}kg × {s.reps} {s.rpe ? `@RPE ${s.rpe}` : ""}
+                          Set {s.setNumber}: {formatLb(s.weightKg)}lb × {s.reps} {s.rpe ? `@RPE ${s.rpe}` : ""}
                           {pendingIds.has(s.id) && <span className="text-white/30 ml-2 text-xs">⏳ syncing</span>}
                         </span>
                         <button className="text-white/30" onClick={() => deleteSet(s.id)}>

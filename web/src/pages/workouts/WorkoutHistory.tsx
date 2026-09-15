@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import TopBar from "../../components/TopBar";
 import { api } from "../../api/client";
+import { kgToLb } from "../../lib/units";
 
 interface Workout {
   id: string;
@@ -40,7 +41,7 @@ export default function WorkoutHistory() {
                     {!w.endedAt && <span className="text-bean-400 ml-2">In progress</span>}
                   </p>
                 </div>
-                <p className="text-sm text-white/50">{Math.round(totalVolume)}kg vol</p>
+                <p className="text-sm text-white/50">{Math.round(kgToLb(totalVolume))}lb vol</p>
               </div>
               <p className="text-white/40 text-xs mt-1 truncate">{exerciseNames.join(", ")}</p>
             </Link>

@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import TopBar from "../../components/TopBar";
 import { api } from "../../api/client";
+import { formatLb, kgToLb } from "../../lib/units";
 
 interface Stats {
   heaviestSet: { weightKg: number; reps: number; date: string } | null;
@@ -10,7 +11,13 @@ interface Stats {
   estimated1RMDate: string | null;
   volumeOverTime: { date: string; volume: number }[];
   totalSets: number;
-  suggestion: { weightKg: number; reps: number; note: string } | null;
+  suggestion: {
+    weightKg: number;
+    reps: number;
+    lastWeightKg: number;
+    lastReps: number;
+    kind: "weight" | "reps";
+  } | null;
 }
 
 interface HistorySet {
@@ -35,7 +42,7 @@ export default function ExerciseDetail() {
 
   const chartData = (stats?.volumeOverTime || []).map((v) => ({
     date: new Date(v.date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-    volume: Math.round(v.volume),
+    volume: Math.round(kgToLb(v.volume)),
   }));
 
   return (
@@ -45,9 +52,10 @@ export default function ExerciseDetail() {
         {stats?.suggestion && (
           <div className="card bg-bean-500/10 border-bean-600">
             <p className="text-bean-300 text-sm">
-              💡 {stats.suggestion.note} Try{" "}
+              💡 Last time: {formatLb(stats.suggestion.lastWeightKg)}lb × {stats.suggestion.lastReps}. Try{" "}
+              {stats.suggestion.kind === "weight" ? "adding weight" : "one more rep"}:{" "}
               <span className="font-semibold">
-                {stats.suggestion.weightKg}kg × {stats.suggestion.reps}
+                {formatLb(stats.suggestion.weightKg)}lb × {stats.suggestion.reps}
               </span>
               .
             </p>
@@ -57,19 +65,21 @@ export default function ExerciseDetail() {
         <div className="grid grid-cols-2 gap-3">
           <div className="card text-center">
             <p className="text-xl font-bold text-bean-400">
-              {stats?.heaviestSet ? `${stats.heaviestSet.weightKg}kg × ${stats.heaviestSet.reps}` : "—"}
+              {stats?.heaviestSet ? `${formatLb(stats.heaviestSet.weightKg)}lb × ${stats.heaviestSet.reps}` : "—"}
             </p>
             <p className="text-xs text-white/50 mt-1">Heaviest set (PR)</p>
           </div>
           <div className="card text-center">
-            <p className="text-xl font-bold text-bean-400">{stats?.estimated1RM ? `${stats.estimated1RM}kg` : "—"}</p>
+            <p className="text-xl font-bold text-bean-400">
+              {stats?.estimated1RM ? `${formatLb(stats.estimated1RM)}lb` : "—"}
+            </p>
             <p className="text-xs text-white/50 mt-1">Estimated 1RM</p>
           </div>
         </div>
 
         {chartData.length > 1 && (
           <div className="card">
-            <p className="text-sm font-semibold mb-2">Volume over time</p>
+            <p className="text-sm font-semibold mb-2">Volume over time (lbs)</p>
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={chartData}>
                 <XAxis dataKey="date" stroke="#666" fontSize={11} tickLine={false} />
@@ -88,7 +98,7 @@ export default function ExerciseDetail() {
               <div key={s.id} className="flex justify-between text-sm border-b border-ink-800 pb-2">
                 <span className="text-white/50">{new Date(s.completedAt).toLocaleDateString()}</span>
                 <span>
-                  {s.weightKg}kg × {s.reps} {s.rpe ? `@RPE ${s.rpe}` : ""}
+                  {formatLb(s.weightKg)}lb × {s.reps} {s.rpe ? `@RPE ${s.rpe}` : ""}
                 </span>
               </div>
             ))}

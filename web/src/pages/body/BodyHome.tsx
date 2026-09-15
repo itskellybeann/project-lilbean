@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import TopBar from "../../components/TopBar";
 import { api } from "../../api/client";
+import { formatLb, kgToLb, lbToKg } from "../../lib/units";
 
 interface Metric {
   id: string;
@@ -26,7 +27,7 @@ const MEASUREMENT_LABELS: Record<string, string> = { waist: "Waist", chest: "Che
 export default function BodyHome() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [date, setDate] = useState(todayISO());
-  const [weightKg, setWeightKg] = useState("");
+  const [weightLb, setWeightLb] = useState("");
   const [bodyFatPct, setBodyFatPct] = useState("");
   const [waist, setWaist] = useState("");
   const [chest, setChest] = useState("");
@@ -43,7 +44,7 @@ export default function BodyHome() {
   function loadGoal() {
     api.get<GoalResponse>("/body/goal").then((g) => {
       setGoalData(g);
-      if (g.goal?.goalWeightKg) setGoalInput(String(g.goal.goalWeightKg));
+      if (g.goal?.goalWeightKg) setGoalInput(formatLb(g.goal.goalWeightKg));
     });
   }
   useEffect(loadGoal, []);
@@ -51,7 +52,7 @@ export default function BodyHome() {
   async function saveGoal() {
     setSavingGoal(true);
     try {
-      await api.put("/body/goal", { goalWeightKg: goalInput ? Number(goalInput) : null });
+      await api.put("/body/goal", { goalWeightKg: goalInput ? lbToKg(Number(goalInput)) : null });
       loadGoal();
     } finally {
       setSavingGoal(false);
@@ -61,7 +62,7 @@ export default function BodyHome() {
   async function save() {
     await api.post("/body/metrics", {
       date,
-      weightKg: weightKg ? Number(weightKg) : null,
+      weightKg: weightLb ? lbToKg(Number(weightLb)) : null,
       bodyFatPct: bodyFatPct ? Number(bodyFatPct) : null,
       measurements: {
         ...(waist ? { waist: Number(waist) } : {}),
@@ -69,7 +70,7 @@ export default function BodyHome() {
         ...(arms ? { arms: Number(arms) } : {}),
       },
     });
-    setWeightKg("");
+    setWeightLb("");
     setBodyFatPct("");
     setWaist("");
     setChest("");
@@ -81,7 +82,7 @@ export default function BodyHome() {
     .filter((m) => m.weightKg != null)
     .map((m) => ({
       date: new Date(m.date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-      weight: m.weightKg,
+      weight: Math.round(kgToLb(m.weightKg!) * 10) / 10,
     }));
 
   const measurementKeys = Array.from(
@@ -114,7 +115,7 @@ export default function BodyHome() {
 
         {chartData.length > 1 && (
           <div className="card">
-            <p className="text-sm font-semibold mb-2">Weight over time</p>
+            <p className="text-sm font-semibold mb-2">Weight over time (lbs)</p>
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={chartData}>
                 <XAxis dataKey="date" stroke="#666" fontSize={11} tickLine={false} />
@@ -129,7 +130,7 @@ export default function BodyHome() {
         <div className="card space-y-2">
           <p className="font-semibold text-sm">Goal weight</p>
           <div className="flex gap-2">
-            <input className="input flex-1" inputMode="decimal" placeholder="e.g. 65" value={goalInput} onChange={(e) => setGoalInput(e.target.value)} />
+            <input className="input flex-1" inputMode="decimal" placeholder="e.g. 145" value={goalInput} onChange={(e) => setGoalInput(e.target.value)} />
             <button className="btn-secondary px-4" onClick={saveGoal} disabled={savingGoal}>
               Save
             </button>
@@ -138,8 +139,8 @@ export default function BodyHome() {
             <p className="text-xs text-white/50">
               {goalData.projection ? (
                 <>
-                  At {Math.abs(goalData.projection.currentRateKgPerWeek).toFixed(2)}kg/week, you'll hit{" "}
-                  {goalData.goal.goalWeightKg}kg around{" "}
+                  At {Math.abs(kgToLb(goalData.projection.currentRateKgPerWeek)).toFixed(2)}lb/week, you'll hit{" "}
+                  {formatLb(goalData.goal.goalWeightKg)}lb around{" "}
                   <span className="text-bean-400 font-semibold">
                     {new Date(goalData.projection.projectedDate).toLocaleDateString(undefined, {
                       month: "short",
@@ -178,8 +179,8 @@ export default function BodyHome() {
           <input type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} />
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="label">Weight (kg)</label>
-              <input className="input" inputMode="decimal" value={weightKg} onChange={(e) => setWeightKg(e.target.value)} />
+              <label className="label">Weight (lbs)</label>
+              <input className="input" inputMode="decimal" value={weightLb} onChange={(e) => setWeightLb(e.target.value)} />
             </div>
             <div>
               <label className="label">Body fat %</label>
@@ -215,7 +216,7 @@ export default function BodyHome() {
                 <div key={m.id} className="flex justify-between text-sm border-b border-ink-800 pb-1.5">
                   <span className="text-white/50">{new Date(m.date).toLocaleDateString()}</span>
                   <span>
-                    {m.weightKg ? `${m.weightKg}kg` : ""} {m.bodyFatPct ? `· ${m.bodyFatPct}%` : ""}
+                    {m.weightKg ? `${formatLb(m.weightKg)}lb` : ""} {m.bodyFatPct ? `· ${m.bodyFatPct}%` : ""}
                   </span>
                 </div>
               ))}

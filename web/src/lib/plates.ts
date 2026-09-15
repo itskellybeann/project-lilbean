@@ -1,29 +1,30 @@
-export const DEFAULT_BAR_KG = 20;
-export const DEFAULT_PLATES_KG = [25, 20, 15, 10, 5, 2.5, 1.25];
+export const DEFAULT_BAR_LB = 45;
+export const DEFAULT_PLATES_LB = [45, 35, 25, 10, 5, 2.5];
 
 export interface PlateBreakdown {
   perSide: number;
   plates: number[];
-  remainderKg: number;
+  remainderLb: number;
 }
 
 // Greedy plate fill — good enough for standard gym plate sets (no fractional
-// plates smaller than 1.25kg assumed available).
+// plates smaller than 2.5lb assumed available). Operates purely in whatever
+// display unit is passed in (pounds); it never touches stored kg values.
 export function calculatePlates(
-  targetWeightKg: number,
-  barKg: number = DEFAULT_BAR_KG,
-  availablePlates: number[] = DEFAULT_PLATES_KG
+  targetWeightLb: number,
+  barLb: number = DEFAULT_BAR_LB,
+  availablePlates: number[] = DEFAULT_PLATES_LB
 ): PlateBreakdown {
-  const perSide = (targetWeightKg - barKg) / 2;
-  if (perSide <= 0) return { perSide: 0, plates: [], remainderKg: 0 };
+  const perSide = (targetWeightLb - barLb) / 2;
+  if (perSide <= 0) return { perSide: 0, plates: [], remainderLb: 0 };
 
   let remaining = perSide;
   const plates: number[] = [];
   for (const plate of [...availablePlates].sort((a, b) => b - a)) {
-    while (remaining >= plate - 0.001) {
+    while (remaining >= plate - 0.01) {
       plates.push(plate);
       remaining -= plate;
     }
   }
-  return { perSide, plates, remainderKg: Math.round(remaining * 100) / 100 };
+  return { perSide, plates, remainderLb: Math.round(remaining * 100) / 100 };
 }

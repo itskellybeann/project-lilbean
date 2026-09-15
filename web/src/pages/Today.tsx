@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import TopBar from "../components/TopBar";
 import MacroRing from "../components/MacroRing";
 import { useAuth } from "../state/auth";
+import { formatLb, kgToLb } from "../lib/units";
 
 interface TodaySet {
   weightKg: number;
@@ -79,7 +80,7 @@ export default function Today() {
                   <p className="font-bold">{w.name}</p>
                   <p className="text-white/40 text-xs mt-0.5 truncate">{exerciseNames.join(", ") || "No sets logged"}</p>
                 </div>
-                <p className="text-sm text-white/50 whitespace-nowrap">{Math.round(volume)}kg</p>
+                <p className="text-sm text-white/50 whitespace-nowrap">{Math.round(kgToLb(volume))}lb</p>
               </div>
             </Link>
           );
@@ -133,7 +134,7 @@ export default function Today() {
             </div>
             <div>
               <p className="text-lg font-bold">
-                {data?.latestBodyMetric?.weightKg ? `${data.latestBodyMetric.weightKg}kg` : "—"}
+                {data?.latestBodyMetric?.weightKg ? `${formatLb(data.latestBodyMetric.weightKg)}lb` : "—"}
               </p>
               <p className="text-[11px] text-white/40">Weight</p>
             </div>

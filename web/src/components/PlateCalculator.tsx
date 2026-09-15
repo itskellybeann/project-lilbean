@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { calculatePlates, DEFAULT_BAR_KG } from "../lib/plates";
+import { calculatePlates, DEFAULT_BAR_LB } from "../lib/plates";
 
-export default function PlateCalculator({ weightKg }: { weightKg: number }) {
+export default function PlateCalculator({ weightLb }: { weightLb: number }) {
   const [open, setOpen] = useState(false);
-  const [barKg, setBarKg] = useState(String(DEFAULT_BAR_KG));
+  const [barLb, setBarLb] = useState(String(DEFAULT_BAR_LB));
 
-  const { plates, remainderKg } = calculatePlates(weightKg || 0, Number(barKg) || 0);
+  const { plates, remainderLb } = calculatePlates(weightLb || 0, Number(barLb) || 0);
 
   return (
     <div>
@@ -15,16 +15,16 @@ export default function PlateCalculator({ weightKg }: { weightKg: number }) {
       {open && (
         <div className="card mt-2 bg-ink-800">
           <div className="flex items-center gap-2 mb-2">
-            <label className="text-xs text-white/50">Bar (kg)</label>
+            <label className="text-xs text-white/50">Bar (lbs)</label>
             <input
               className="input w-20 py-1"
               inputMode="decimal"
-              value={barKg}
-              onChange={(e) => setBarKg(e.target.value)}
+              value={barLb}
+              onChange={(e) => setBarLb(e.target.value)}
             />
           </div>
-          {weightKg > 0 ? (
-            plates.length > 0 || remainderKg === 0 ? (
+          {weightLb > 0 ? (
+            plates.length > 0 || remainderLb === 0 ? (
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-xs text-white/50">Per side:</span>
                 {plates.length === 0 && <span className="text-sm">bar only</span>}
@@ -33,8 +33,8 @@ export default function PlateCalculator({ weightKg }: { weightKg: number }) {
                     {p}
                   </span>
                 ))}
-                {remainderKg > 0 && (
-                  <span className="text-xs text-white/40">(+{remainderKg}kg not achievable with standard plates)</span>
+                {remainderLb > 0 && (
+                  <span className="text-xs text-white/40">(+{remainderLb}lb not achievable with standard plates)</span>
                 )}
               </div>
             ) : (

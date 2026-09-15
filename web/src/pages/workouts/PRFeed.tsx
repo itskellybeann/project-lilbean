@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import TopBar from "../../components/TopBar";
 import { api } from "../../api/client";
+import { formatLb } from "../../lib/units";
 
 interface PREvent {
   type: "weight" | "1rm";
@@ -34,7 +35,7 @@ export default function PRFeed() {
             </div>
             <div className="text-right">
               <p className="text-bean-400 font-bold">
-                {e.type === "weight" ? `${e.weightKg}kg × ${e.reps}` : `${e.value}kg 1RM`}
+                {e.type === "weight" ? `${formatLb(e.weightKg)}lb × ${e.reps}` : `${formatLb(e.value)}lb 1RM`}
               </p>
               <p className="text-white/30 text-[10px] uppercase tracking-wide">
                 {e.type === "weight" ? "Heaviest set" : "Est. 1RM"}

@@ -22,8 +22,11 @@ Two accounts, fully separate data, shared "today" dashboard concept per user.
 - Routines/templates you build once and reuse, including superset grouping
   (mark two exercises as a superset in the routine editor or mid-workout)
 - Live workout logging: weight/reps/RPE per set, warm-up flag, built-in rest timer
-- Plate calculator next to the weight field (configurable bar weight)
-- Progressive overload suggestions ("last time: 60kg×8 — try 62.5kg") shown when
+  (weights are entered and shown in **lbs**; stored internally as kg, so nothing
+  needs to change if that ever becomes a per-user preference later)
+- Plate calculator next to the weight field (defaults to a 45lb bar + standard
+  45/35/25/10/5/2.5lb plates)
+- Progressive overload suggestions ("last time: 135lb×8 — try 137.5lb") shown when
   picking an exercise to log and on its detail page
 - Per-exercise PR (heaviest set), estimated 1RM (Epley formula), volume-over-time chart
 - **PR feed**: a chronological timeline of every weight and 1RM personal record
@@ -54,8 +57,8 @@ Two accounts, fully separate data, shared "today" dashboard concept per user.
 - 14-day calorie/macro trend charts
 
 **Body & health**
-- Weight / body-fat % / tape measurements, with a chart for weight and for each
-  measurement you track (waist, chest, arms, ...)
+- Weight (lbs) / body-fat % / tape measurements, with a chart for weight and for
+  each measurement you track (waist, chest, arms, ...)
 - **Goal weight** with a projected date, based on your recent rate of change
 - Progress photo gallery (uploaded straight from your phone camera), with a
   **before/after comparison view** once you have two or more photos
