@@ -46,6 +46,10 @@ Two accounts, fully separate data, shared "today" dashboard concept per user.
 **Nutrition**
 - Food database seeded with common staples + barcode scanning via your phone camera
   (in-browser ZXing scanner) backed by the free OpenFoodFacts API
+- **AI photo calorie estimate** (optional): snap a photo of a meal and Claude
+  estimates the name, portion, and macros, pre-filling the custom-food form for
+  you to review and adjust before saving. Needs an `ANTHROPIC_API_KEY` (see note
+  below) — leave it blank to skip the feature entirely.
 - Custom foods and recipes (built from foods, macros computed per serving)
 - **Favorites and recently-logged foods** surfaced at the top of Add Food, so
   logging the same breakfast every day doesn't mean re-searching for it
@@ -85,6 +89,20 @@ CSV/JSON export (from RingConn's export feature, or from Apple Health/Google Fit
 route RingConn data there) for bulk import. If RingConn ships a public API in the future,
 `server/src/routes/health.ts` is the only file that needs a real integration added.
 
+### A note on AI food photo analysis
+
+This calls the Claude API (console.anthropic.com), which is a separate account
+and separate billing from a Claude.ai Pro/Max subscription — a Pro plan does
+**not** cover it. You'll need to create an API key there and add a little
+credit (a few dollars lasts a very long time at personal-use volume). Cost is
+roughly $0.003 per photo analyzed with the default model (`claude-haiku-4-5`),
+so realistic household use comes out to well under $1/month. Set
+`ANTHROPIC_API_KEY` in `.env` to enable it; leave it blank and the "snap a
+photo" button just won't do anything useful (the server returns a clear error
+instead of trying). Estimates are a starting point for casual macro
+tracking, not a substitute for a food scale — always double-check before
+saving, especially for mixed dishes or unclear portions.
+
 ### A note on push notifications
 
 Browsers only allow a page to subscribe to push notifications over a secure context
@@ -117,6 +135,9 @@ This follows the same pattern as your other `/volume1/docker/<service>/` contain
    - `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` — optional, for push notifications.
      Generate a pair with `npx web-push generate-vapid-keys` (needs Node; run it
      anywhere, including your own laptop). Leave both blank to skip push entirely.
+   - `ANTHROPIC_API_KEY` — optional, for the AI food photo estimate feature.
+     Get a key at console.anthropic.com (separate billing from Claude Pro —
+     see note above). Leave blank to skip it entirely.
 
 3. **Build and start:**
    ```sh

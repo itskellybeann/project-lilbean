@@ -1,8 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import TopBar from "../../components/TopBar";
 import BarcodeScanner from "../../components/BarcodeScanner";
 import { api } from "../../api/client";
+
+interface FoodEstimate {
+  name: string;
+  servingSize: number;
+  servingUnit: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  confidence: "low" | "medium" | "high";
+  notes: string;
+}
 
 interface Food {
   id: string;
@@ -62,7 +74,18 @@ export default function AddFood() {
   const [selected, setSelected] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState("100");
   const [showCustom, setShowCustom] = useState(false);
-  const [custom, setCustom] = useState({ name: "", calories: "", protein: "", carbs: "", fat: "" });
+  const [custom, setCustom] = useState({
+    name: "",
+    calories: "",
+    protein: "",
+    carbs: "",
+    fat: "",
+    servingSize: "100",
+    servingUnit: "g",
+  });
+  const [photoNote, setPhotoNote] = useState<{ confidence: string; notes: string } | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const photoRef = useRef<HTMLInputElement>(null);
 
   function loadQuickLists() {
     api.get<Food[]>("/foods/recent").then(setRecent);
@@ -112,17 +135,46 @@ export default function AddFood() {
 
   async function saveCustomAndLog() {
     if (!custom.name || !custom.calories) return;
+    const servingSize = Number(custom.servingSize || 100);
     const food = await api.post<Food>("/foods", {
       name: custom.name,
       calories: Number(custom.calories),
       protein: Number(custom.protein || 0),
       carbs: Number(custom.carbs || 0),
       fat: Number(custom.fat || 0),
-      servingSize: 100,
-      servingUnit: "g",
+      servingSize,
+      servingUnit: custom.servingUnit || "g",
     });
-    await api.post("/nutrition/diary", { date, meal, foodId: food.id, quantity: 100 });
+    await api.post("/nutrition/diary", { date, meal, foodId: food.id, quantity: servingSize });
     navigate("/nutrition");
+  }
+
+  async function analyzePhoto() {
+    const file = photoRef.current?.files?.[0];
+    if (!file) return;
+    setAnalyzing(true);
+    setPhotoNote(null);
+    try {
+      const form = new FormData();
+      form.append("photo", file);
+      const estimate = await api.post<FoodEstimate>("/foods/analyze-photo", form);
+      setCustom({
+        name: estimate.name,
+        calories: String(Math.round(estimate.calories)),
+        protein: String(Math.round(estimate.protein)),
+        carbs: String(Math.round(estimate.carbs)),
+        fat: String(Math.round(estimate.fat)),
+        servingSize: String(estimate.servingSize),
+        servingUnit: estimate.servingUnit,
+      });
+      setPhotoNote({ confidence: estimate.confidence, notes: estimate.notes });
+      setShowCustom(true);
+    } catch (err: any) {
+      alert(err?.message || "Couldn't analyze that photo");
+    } finally {
+      setAnalyzing(false);
+      if (photoRef.current) photoRef.current.value = "";
+    }
   }
 
   if (scanning) {
@@ -174,10 +226,22 @@ export default function AddFood() {
       <div className="p-4 space-y-3">
         <div className="flex gap-2">
           <input className="input flex-1" placeholder="Search foods…" value={q} onChange={(e) => setQ(e.target.value)} />
-          <button className="btn-secondary px-4" onClick={() => setScanning(true)}>
+          <button className="btn-secondary px-4" onClick={() => setScanning(true)} aria-label="Scan barcode">
             📷
           </button>
         </div>
+
+        <input
+          ref={photoRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={analyzePhoto}
+        />
+        <button className="btn-secondary w-full" disabled={analyzing} onClick={() => photoRef.current?.click()}>
+          {analyzing ? "Analyzing photo…" : "🧁 Snap a photo to estimate calories"}
+        </button>
 
         {q.trim() ? (
           <div className="space-y-2">
@@ -232,14 +296,35 @@ export default function AddFood() {
           </button>
         ) : (
           <div className="card space-y-2">
-            <p className="font-semibold text-sm">Custom food (per 100g)</p>
+            <p className="font-semibold text-sm">Custom food</p>
+            {photoNote && (
+              <p className="text-xs text-bean-400 bg-bean-400/10 rounded-lg px-2 py-1.5">
+                AI estimate ({photoNote.confidence} confidence) — {photoNote.notes} Double-check before saving.
+              </p>
+            )}
             <input className="input" placeholder="Name" value={custom.name} onChange={(e) => setCustom((c) => ({ ...c, name: e.target.value }))} />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                className="input"
+                placeholder="Serving size"
+                inputMode="decimal"
+                value={custom.servingSize}
+                onChange={(e) => setCustom((c) => ({ ...c, servingSize: e.target.value }))}
+              />
+              <input
+                className="input"
+                placeholder="Unit (g, cup, plate…)"
+                value={custom.servingUnit}
+                onChange={(e) => setCustom((c) => ({ ...c, servingUnit: e.target.value }))}
+              />
+            </div>
             <div className="grid grid-cols-4 gap-2">
               <input className="input" placeholder="kcal" inputMode="decimal" value={custom.calories} onChange={(e) => setCustom((c) => ({ ...c, calories: e.target.value }))} />
               <input className="input" placeholder="protein" inputMode="decimal" value={custom.protein} onChange={(e) => setCustom((c) => ({ ...c, protein: e.target.value }))} />
               <input className="input" placeholder="carbs" inputMode="decimal" value={custom.carbs} onChange={(e) => setCustom((c) => ({ ...c, carbs: e.target.value }))} />
               <input className="input" placeholder="fat" inputMode="decimal" value={custom.fat} onChange={(e) => setCustom((c) => ({ ...c, fat: e.target.value }))} />
             </div>
+            <p className="text-[10px] text-white/40">These values are for the whole serving size above, not per-100g.</p>
             <button className="btn-primary w-full" onClick={saveCustomAndLog}>
               Save &amp; add
             </button>
