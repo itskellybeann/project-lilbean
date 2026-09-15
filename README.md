@@ -23,6 +23,11 @@ Two accounts, fully separate data, shared "today" dashboard concept per user.
 - Live workout logging: weight/reps/RPE per set, warm-up flag, built-in rest timer
 - Per-exercise PR (heaviest set), estimated 1RM (Epley formula), volume-over-time chart
 - Full workout history
+- **Import your history from Hevy**: Settings → Import from Hevy, upload the CSV
+  export from Hevy's own Settings → Export Data. Matches exercises to the existing
+  library by name where possible (creating custom ones otherwise), skips
+  cardio/duration-only sets (this app tracks strength sets as weight × reps), and
+  is safe to re-run — already-imported workouts are detected and skipped.
 
 **Nutrition**
 - Food database seeded with common staples + barcode scanning via your phone camera

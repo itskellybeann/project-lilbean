@@ -13,6 +13,7 @@ import { nutritionRouter } from "./routes/nutrition";
 import { bodyRouter } from "./routes/body";
 import { healthRouter } from "./routes/health";
 import { dashboardRouter } from "./routes/dashboard";
+import { importsRouter } from "./routes/imports";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -41,6 +42,7 @@ app.use("/api/nutrition", nutritionRouter);
 app.use("/api/body", bodyRouter);
 app.use("/api/health-metrics", healthRouter);
 app.use("/api/dashboard", dashboardRouter);
+app.use("/api/imports", importsRouter);
 
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);
