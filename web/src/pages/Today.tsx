@@ -26,6 +26,7 @@ interface TodayData {
   todayHealth: { sleepMinutes: number | null; restingHr: number | null; steps: number | null } | null;
   latestBodyMetric: { weightKg: number | null; date: string } | null;
   streaks: { workout: number; logging: number };
+  waterMl: number;
 }
 
 export default function Today() {
@@ -98,6 +99,9 @@ export default function Today() {
             <MacroRing label="Carbs" value={totals.carbs} target={target.carbs} color="#ffadd2" />
             <MacroRing label="Fat" value={totals.fat} target={target.fat} color="#d81b70" />
           </div>
+          <p className="text-center text-xs text-white/40 mt-2">
+            💧 {((data?.waterMl ?? 0) / 1000).toFixed(2)}L water today
+          </p>
           <Link to="/nutrition" className="btn-secondary w-full text-center mt-3 block">
             Open diary
           </Link>

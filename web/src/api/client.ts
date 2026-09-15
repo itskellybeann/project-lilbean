@@ -45,4 +45,21 @@ export const api = {
   put: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "PUT", body: JSON.stringify(body ?? {}) }),
   del: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  // Downloads an authenticated endpoint's response as a file (the browser
+  // can't attach an Authorization header to a plain <a href> navigation).
+  download: async (path: string, filename: string) => {
+    const headers: Record<string, string> = {};
+    if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
+    const resp = await fetch(`${BASE}${path}`, { headers, credentials: "include" });
+    if (!resp.ok) throw new Error(`Download failed (${resp.status})`);
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
 };

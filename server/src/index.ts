@@ -14,6 +14,9 @@ import { bodyRouter } from "./routes/body";
 import { healthRouter } from "./routes/health";
 import { dashboardRouter } from "./routes/dashboard";
 import { importsRouter } from "./routes/imports";
+import { exportRouter } from "./routes/exportData";
+import { pushRouter } from "./routes/push";
+import { startReminderCron } from "./lib/reminderCron";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -43,6 +46,8 @@ app.use("/api/body", bodyRouter);
 app.use("/api/health-metrics", healthRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/imports", importsRouter);
+app.use("/api/export", exportRouter);
+app.use("/api/push", pushRouter);
 
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);
@@ -51,4 +56,5 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 
 app.listen(PORT, () => {
   console.log(`lilbean server listening on :${PORT}`);
+  startReminderCron();
 });

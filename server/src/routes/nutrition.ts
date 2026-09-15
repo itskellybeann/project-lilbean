@@ -2,6 +2,7 @@ import { Router } from "express";
 import { prisma } from "../db";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
 import { macrosForRecipe } from "./recipes";
+import { resolveTargetForDate } from "../lib/targets";
 
 export const nutritionRouter = Router();
 nutritionRouter.use(requireAuth);
@@ -29,8 +30,36 @@ nutritionRouter.get("/diary", async (req: AuthedRequest, res) => {
     },
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );
-  const target = await prisma.nutritionTarget.findUnique({ where: { userId: req.userId! } });
+  const target = await resolveTargetForDate(req.userId!, date);
   res.json({ entries, totals, target });
+});
+
+// Duplicate every diary entry from one date onto another (e.g. "copy yesterday").
+nutritionRouter.post("/diary/copy", async (req: AuthedRequest, res) => {
+  const { fromDate, toDate } = req.body || {};
+  if (!fromDate || !toDate) return res.status(400).json({ error: "fromDate and toDate required" });
+
+  const source = await prisma.diaryEntry.findMany({
+    where: { userId: req.userId!, date: dateOnly(fromDate) },
+  });
+  if (source.length === 0) return res.json({ copied: 0 });
+
+  const target = dateOnly(toDate);
+  await prisma.diaryEntry.createMany({
+    data: source.map((e) => ({
+      userId: req.userId!,
+      date: target,
+      meal: e.meal,
+      foodId: e.foodId,
+      recipeId: e.recipeId,
+      quantity: e.quantity,
+      calories: e.calories,
+      protein: e.protein,
+      carbs: e.carbs,
+      fat: e.fat,
+    })),
+  });
+  res.json({ copied: source.length });
 });
 
 // Add a diary entry from a food (quantity = amount in food's serving unit, e.g. grams) or a recipe (quantity = servings)
@@ -124,14 +153,41 @@ nutritionRouter.get("/targets", async (req: AuthedRequest, res) => {
 });
 
 nutritionRouter.put("/targets", async (req: AuthedRequest, res) => {
-  const { calories, protein, carbs, fat } = req.body || {};
+  const { calories, protein, carbs, fat, restCalories, restProtein, restCarbs, restFat } = req.body || {};
   if ([calories, protein, carbs, fat].some((v) => v == null)) {
     return res.status(400).json({ error: "calories, protein, carbs, fat required" });
   }
+  // Rest-day fields are optional as a group: send restCalories to enable a
+  // separate rest-day target, or omit/null it to always use the main target.
+  const restFields = {
+    restCalories: restCalories ?? null,
+    restProtein: restCalories != null ? restProtein ?? null : null,
+    restCarbs: restCalories != null ? restCarbs ?? null : null,
+    restFat: restCalories != null ? restFat ?? null : null,
+  };
   const target = await prisma.nutritionTarget.upsert({
     where: { userId: req.userId! },
-    update: { calories, protein, carbs, fat },
-    create: { userId: req.userId!, calories, protein, carbs, fat },
+    update: { calories, protein, carbs, fat, ...restFields },
+    create: { userId: req.userId!, calories, protein, carbs, fat, ...restFields },
   });
   res.json(target);
+});
+
+// Water intake
+nutritionRouter.get("/water", async (req: AuthedRequest, res) => {
+  const date = dateOnly(String(req.query.date || new Date().toISOString()));
+  const entry = await prisma.waterIntake.findFirst({ where: { userId: req.userId!, date } });
+  res.json({ ml: entry?.ml ?? 0 });
+});
+
+nutritionRouter.post("/water", async (req: AuthedRequest, res) => {
+  const { date, deltaMl } = req.body || {};
+  if (!date || deltaMl == null) return res.status(400).json({ error: "date and deltaMl required" });
+  const day = dateOnly(date);
+  const existing = await prisma.waterIntake.findFirst({ where: { userId: req.userId!, date: day } });
+  const newMl = Math.max(0, (existing?.ml || 0) + Number(deltaMl));
+  const entry = existing
+    ? await prisma.waterIntake.update({ where: { id: existing.id }, data: { ml: newMl } })
+    : await prisma.waterIntake.create({ data: { userId: req.userId!, date: day, ml: newMl } });
+  res.json({ ml: entry.ml });
 });

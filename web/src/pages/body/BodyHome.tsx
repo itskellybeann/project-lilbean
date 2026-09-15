@@ -12,9 +12,16 @@ interface Metric {
   measurements: Record<string, number> | null;
 }
 
+interface GoalResponse {
+  goal: { goalWeightKg: number | null } | null;
+  projection: { currentRateKgPerWeek: number; projectedDate: string } | null;
+}
+
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
+
+const MEASUREMENT_LABELS: Record<string, string> = { waist: "Waist", chest: "Chest", arms: "Arms" };
 
 export default function BodyHome() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
@@ -24,11 +31,32 @@ export default function BodyHome() {
   const [waist, setWaist] = useState("");
   const [chest, setChest] = useState("");
   const [arms, setArms] = useState("");
+  const [goalData, setGoalData] = useState<GoalResponse | null>(null);
+  const [goalInput, setGoalInput] = useState("");
+  const [savingGoal, setSavingGoal] = useState(false);
 
   function load() {
     api.get<Metric[]>("/body/metrics").then(setMetrics);
   }
   useEffect(load, []);
+
+  function loadGoal() {
+    api.get<GoalResponse>("/body/goal").then((g) => {
+      setGoalData(g);
+      if (g.goal?.goalWeightKg) setGoalInput(String(g.goal.goalWeightKg));
+    });
+  }
+  useEffect(loadGoal, []);
+
+  async function saveGoal() {
+    setSavingGoal(true);
+    try {
+      await api.put("/body/goal", { goalWeightKg: goalInput ? Number(goalInput) : null });
+      loadGoal();
+    } finally {
+      setSavingGoal(false);
+    }
+  }
 
   async function save() {
     await api.post("/body/metrics", {
@@ -55,6 +83,19 @@ export default function BodyHome() {
       date: new Date(m.date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
       weight: m.weightKg,
     }));
+
+  const measurementKeys = Array.from(
+    new Set(metrics.flatMap((m) => Object.keys(m.measurements || {})))
+  );
+  const measurementCharts = measurementKeys.map((key) => ({
+    key,
+    data: metrics
+      .filter((m) => m.measurements?.[key] != null)
+      .map((m) => ({
+        date: new Date(m.date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+        value: m.measurements![key],
+      })),
+  }));
 
   return (
     <div>
@@ -83,6 +124,53 @@ export default function BodyHome() {
               </LineChart>
             </ResponsiveContainer>
           </div>
+        )}
+
+        <div className="card space-y-2">
+          <p className="font-semibold text-sm">Goal weight</p>
+          <div className="flex gap-2">
+            <input className="input flex-1" inputMode="decimal" placeholder="e.g. 65" value={goalInput} onChange={(e) => setGoalInput(e.target.value)} />
+            <button className="btn-secondary px-4" onClick={saveGoal} disabled={savingGoal}>
+              Save
+            </button>
+          </div>
+          {goalData?.goal?.goalWeightKg && (
+            <p className="text-xs text-white/50">
+              {goalData.projection ? (
+                <>
+                  At {Math.abs(goalData.projection.currentRateKgPerWeek).toFixed(2)}kg/week, you'll hit{" "}
+                  {goalData.goal.goalWeightKg}kg around{" "}
+                  <span className="text-bean-400 font-semibold">
+                    {new Date(goalData.projection.projectedDate).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
+                  .
+                </>
+              ) : (
+                "Log a couple more weigh-ins to get a projected date."
+              )}
+            </p>
+          )}
+        </div>
+
+        {measurementCharts.map(
+          ({ key, data }) =>
+            data.length > 1 && (
+              <div key={key} className="card">
+                <p className="text-sm font-semibold mb-2">{MEASUREMENT_LABELS[key] || key} over time (cm)</p>
+                <ResponsiveContainer width="100%" height={140}>
+                  <LineChart data={data}>
+                    <XAxis dataKey="date" stroke="#666" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#666" fontSize={11} tickLine={false} width={35} domain={["auto", "auto"]} />
+                    <Tooltip contentStyle={{ background: "#1a1a1d", border: "1px solid #333338", borderRadius: 8 }} />
+                    <Line type="monotone" dataKey="value" stroke="#ff85bd" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )
         )}
 
         <div className="card space-y-2">

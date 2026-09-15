@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import TopBar from "../components/TopBar";
 import { api } from "../api/client";
 import { useAuth } from "../state/auth";
+import { isSubscribed, pushSupported, sendTestPush, subscribeToPush, unsubscribeFromPush } from "../lib/push";
 
 interface Target {
   calories: number;
   protein: number;
   carbs: number;
   fat: number;
+  restCalories?: number | null;
+  restProtein?: number | null;
+  restCarbs?: number | null;
+  restFat?: number | null;
 }
 
 interface HevyImportSummary {
@@ -22,20 +28,74 @@ interface HevyImportSummary {
 export default function Settings() {
   const { user, logout } = useAuth();
   const [target, setTarget] = useState<Target>({ calories: 2200, protein: 150, carbs: 220, fat: 70 });
+  const [useRestTarget, setUseRestTarget] = useState(false);
   const [saved, setSaved] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<HevyImportSummary | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [pushOn, setPushOn] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushMessage, setPushMessage] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     api.get<Target | null>("/nutrition/targets").then((t) => {
-      if (t) setTarget(t);
+      if (t) {
+        setTarget(t);
+        setUseRestTarget(t.restCalories != null);
+      }
     });
+    isSubscribed().then(setPushOn);
   }, []);
 
+  async function togglePush() {
+    setPushBusy(true);
+    setPushMessage(null);
+    try {
+      if (pushOn) {
+        await unsubscribeFromPush();
+        setPushOn(false);
+      } else {
+        await subscribeToPush();
+        setPushOn(true);
+      }
+    } catch (err: any) {
+      setPushMessage(err.message || "Something went wrong");
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
+  async function testPush() {
+    setPushMessage(null);
+    try {
+      const result = await sendTestPush();
+      setPushMessage(result.sent > 0 ? "Test sent — check your notifications." : "No active subscription found.");
+    } catch (err: any) {
+      setPushMessage(err.message || "Failed to send test");
+    }
+  }
+
+  async function exportData() {
+    setExporting(true);
+    try {
+      await api.download("/export/me", `lilbean-export-${new Date().toISOString().slice(0, 10)}.json`);
+    } catch (err: any) {
+      alert(err.message || "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   async function save() {
-    await api.put("/nutrition/targets", target);
+    await api.put("/nutrition/targets", {
+      ...target,
+      restCalories: useRestTarget ? target.restCalories ?? target.calories : null,
+      restProtein: useRestTarget ? target.restProtein ?? target.protein : null,
+      restCarbs: useRestTarget ? target.restCarbs ?? target.carbs : null,
+      restFat: useRestTarget ? target.restFat ?? target.fat : null,
+    });
     setSaved(true);
     setTimeout(() => setSaved(false), 1500);
   }
@@ -108,6 +168,53 @@ export default function Settings() {
               />
             </div>
           </div>
+
+          <label className="flex items-center gap-2 text-xs text-white/60 pt-1">
+            <input type="checkbox" checked={useRestTarget} onChange={(e) => setUseRestTarget(e.target.checked)} />
+            Use a separate target on rest days (no workout logged)
+          </label>
+
+          {useRestTarget && (
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <div>
+                <label className="label">Rest cal</label>
+                <input
+                  className="input"
+                  inputMode="numeric"
+                  value={target.restCalories ?? target.calories}
+                  onChange={(e) => setTarget((t) => ({ ...t, restCalories: Number(e.target.value) }))}
+                />
+              </div>
+              <div>
+                <label className="label">Rest protein (g)</label>
+                <input
+                  className="input"
+                  inputMode="numeric"
+                  value={target.restProtein ?? target.protein}
+                  onChange={(e) => setTarget((t) => ({ ...t, restProtein: Number(e.target.value) }))}
+                />
+              </div>
+              <div>
+                <label className="label">Rest carbs (g)</label>
+                <input
+                  className="input"
+                  inputMode="numeric"
+                  value={target.restCarbs ?? target.carbs}
+                  onChange={(e) => setTarget((t) => ({ ...t, restCarbs: Number(e.target.value) }))}
+                />
+              </div>
+              <div>
+                <label className="label">Rest fat (g)</label>
+                <input
+                  className="input"
+                  inputMode="numeric"
+                  value={target.restFat ?? target.fat}
+                  onChange={(e) => setTarget((t) => ({ ...t, restFat: Number(e.target.value) }))}
+                />
+              </div>
+            </div>
+          )}
+
           <button className="btn-primary w-full" onClick={save}>
             {saved ? "Saved ✓" : "Save targets"}
           </button>
@@ -148,6 +255,41 @@ export default function Settings() {
               )}
             </div>
           )}
+        </div>
+
+        <Link to="/household" className="card block">
+          <p className="font-semibold">Household</p>
+          <p className="text-white/50 text-sm">See how everyone's doing today</p>
+        </Link>
+
+        <div className="card space-y-2">
+          <p className="font-semibold text-sm">Notifications</p>
+          {pushSupported() ? (
+            <>
+              <p className="text-white/50 text-xs leading-relaxed">
+                A daily nudge if nothing's been logged yet. Needs HTTPS to work — plain LAN/Tailscale IP access
+                won't be able to subscribe unless you put an HTTPS proxy in front (see README).
+              </p>
+              <button className="btn-secondary w-full" onClick={togglePush} disabled={pushBusy}>
+                {pushBusy ? "Working…" : pushOn ? "Disable notifications" : "Enable notifications"}
+              </button>
+              {pushOn && (
+                <button className="btn-secondary w-full" onClick={testPush}>
+                  Send test notification
+                </button>
+              )}
+              {pushMessage && <p className="text-xs text-bean-400">{pushMessage}</p>}
+            </>
+          ) : (
+            <p className="text-white/40 text-xs">Not supported in this browser/context.</p>
+          )}
+        </div>
+
+        <div className="card space-y-2">
+          <p className="font-semibold text-sm">Your data</p>
+          <button className="btn-secondary w-full" onClick={exportData} disabled={exporting}>
+            {exporting ? "Preparing…" : "Export my data (JSON)"}
+          </button>
         </div>
 
         <button className="btn-secondary w-full" onClick={logout}>

@@ -34,6 +34,10 @@ services:
       USER2_NAME: ${USER2_NAME}
       USER2_PASSWORD: ${USER2_PASSWORD}
       NODE_ENV: production
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
+      VAPID_SUBJECT: ${VAPID_SUBJECT}
+      REMINDER_CRON: ${REMINDER_CRON}
     volumes:
       - ./data/uploads:/app/uploads
 

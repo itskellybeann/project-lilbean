@@ -83,6 +83,56 @@ foodsRouter.get("/barcode/:code", async (req: AuthedRequest, res) => {
   }
 });
 
+// Most recently logged distinct foods, for quick re-adding without searching.
+foodsRouter.get("/recent", async (req: AuthedRequest, res) => {
+  const entries = await prisma.diaryEntry.findMany({
+    where: { userId: req.userId!, foodId: { not: null } },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+    select: { foodId: true },
+  });
+
+  const orderedIds: string[] = [];
+  const seen = new Set<string>();
+  for (const e of entries) {
+    if (e.foodId && !seen.has(e.foodId)) {
+      seen.add(e.foodId);
+      orderedIds.push(e.foodId);
+    }
+    if (orderedIds.length >= 10) break;
+  }
+  if (orderedIds.length === 0) return res.json([]);
+
+  const foods = await prisma.food.findMany({ where: { id: { in: orderedIds } } });
+  const byId = new Map(foods.map((f) => [f.id, f]));
+  res.json(orderedIds.map((id) => byId.get(id)).filter(Boolean));
+});
+
+foodsRouter.get("/favorites", async (req: AuthedRequest, res) => {
+  const favorites = await prisma.favoriteFood.findMany({
+    where: { userId: req.userId! },
+    include: { food: true },
+    orderBy: { createdAt: "desc" },
+  });
+  res.json(favorites.map((f) => f.food));
+});
+
+foodsRouter.post("/favorites", async (req: AuthedRequest, res) => {
+  const { foodId } = req.body || {};
+  if (!foodId) return res.status(400).json({ error: "foodId required" });
+  await prisma.favoriteFood.upsert({
+    where: { userId_foodId: { userId: req.userId!, foodId } },
+    update: {},
+    create: { userId: req.userId!, foodId },
+  });
+  res.status(201).json({ ok: true });
+});
+
+foodsRouter.delete("/favorites/:foodId", async (req: AuthedRequest, res) => {
+  await prisma.favoriteFood.deleteMany({ where: { userId: req.userId!, foodId: req.params.foodId } });
+  res.json({ ok: true });
+});
+
 foodsRouter.delete("/:id", async (req: AuthedRequest, res) => {
   const food = await prisma.food.findFirst({ where: { id: req.params.id, ownerUserId: req.userId! } });
   if (!food) return res.status(404).json({ error: "Not found or not yours to delete" });

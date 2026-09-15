@@ -10,6 +10,7 @@ interface ExerciseRow {
   targetSets: number;
   targetReps: string;
   restSeconds: number;
+  supersetId: string | null;
 }
 
 export default function RoutineEditor() {
@@ -32,13 +33,17 @@ export default function RoutineEditor() {
           targetSets: e.targetSets,
           targetReps: e.targetReps,
           restSeconds: e.restSeconds,
+          supersetId: e.supersetId ?? null,
         }))
       );
     });
   }, [id]);
 
   function addExercise(ex: { id: string; name: string }) {
-    setRows((r) => [...r, { exerciseId: ex.id, name: ex.name, targetSets: 3, targetReps: "8-12", restSeconds: 90 }]);
+    setRows((r) => [
+      ...r,
+      { exerciseId: ex.id, name: ex.name, targetSets: 3, targetReps: "8-12", restSeconds: 90, supersetId: null },
+    ]);
     setPicking(false);
   }
 
@@ -48,6 +53,20 @@ export default function RoutineEditor() {
 
   function removeRow(i: number) {
     setRows((r) => r.filter((_, idx) => idx !== i));
+  }
+
+  function toggleSuperset(i: number) {
+    setRows((r) => {
+      const rows = [...r];
+      if (rows[i].supersetId) {
+        rows[i] = { ...rows[i], supersetId: null };
+      } else if (i > 0) {
+        const groupId = rows[i - 1].supersetId || crypto.randomUUID();
+        rows[i - 1] = { ...rows[i - 1], supersetId: groupId };
+        rows[i] = { ...rows[i], supersetId: groupId };
+      }
+      return rows;
+    });
   }
 
   async function save() {
@@ -82,13 +101,20 @@ export default function RoutineEditor() {
 
         <div className="space-y-2">
           {rows.map((row, i) => (
-            <div key={i} className="card">
+            <div key={i} className={row.supersetId ? "card border-bean-600 bg-bean-500/5" : "card"}>
+              {row.supersetId && <p className="text-bean-400 text-xs font-semibold uppercase tracking-wide mb-1">🔗 Superset</p>}
               <div className="flex items-center justify-between">
                 <p className="font-semibold">{row.name}</p>
                 <button className="text-white/40" onClick={() => removeRow(i)}>
                   ✕
                 </button>
               </div>
+              {i > 0 && (
+                <label className="flex items-center gap-2 text-xs text-white/50 mt-1.5">
+                  <input type="checkbox" checked={!!row.supersetId} onChange={() => toggleSuperset(i)} />
+                  Group with previous exercise as a superset
+                </label>
+              )}
               <div className="grid grid-cols-3 gap-2 mt-2">
                 <div>
                   <label className="label">Sets</label>

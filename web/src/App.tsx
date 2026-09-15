@@ -4,6 +4,7 @@ import BottomNav from "./components/BottomNav";
 import Login from "./pages/Login";
 import Today from "./pages/Today";
 import Settings from "./pages/Settings";
+import Household from "./pages/Household";
 import ExerciseLibrary from "./pages/workouts/ExerciseLibrary";
 import ExerciseDetail from "./pages/workouts/ExerciseDetail";
 import RoutineList from "./pages/workouts/RoutineList";
@@ -11,6 +12,7 @@ import RoutineEditor from "./pages/workouts/RoutineEditor";
 import ActiveWorkout from "./pages/workouts/ActiveWorkout";
 import WorkoutHistory from "./pages/workouts/WorkoutHistory";
 import WorkoutsHome from "./pages/workouts/WorkoutsHome";
+import PRFeed from "./pages/workouts/PRFeed";
 import Diary from "./pages/nutrition/Diary";
 import AddFood from "./pages/nutrition/AddFood";
 import Recipes from "./pages/nutrition/Recipes";
@@ -60,6 +62,7 @@ export default function App() {
         <Route path="/workouts/routines/:id/edit" element={<RoutineEditor />} />
         <Route path="/workouts/active/:id" element={<ActiveWorkout />} />
         <Route path="/workouts/history" element={<WorkoutHistory />} />
+        <Route path="/workouts/prs" element={<PRFeed />} />
 
         <Route path="/nutrition" element={<Diary />} />
         <Route path="/nutrition/add" element={<AddFood />} />
@@ -71,6 +74,7 @@ export default function App() {
         <Route path="/body/health" element={<HealthMetrics />} />
 
         <Route path="/settings" element={<Settings />} />
+        <Route path="/household" element={<Household />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

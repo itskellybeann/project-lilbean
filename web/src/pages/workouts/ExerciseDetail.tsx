@@ -10,6 +10,7 @@ interface Stats {
   estimated1RMDate: string | null;
   volumeOverTime: { date: string; volume: number }[];
   totalSets: number;
+  suggestion: { weightKg: number; reps: number; note: string } | null;
 }
 
 interface HistorySet {
@@ -41,6 +42,18 @@ export default function ExerciseDetail() {
     <div>
       <TopBar title="Exercise" />
       <div className="p-4 space-y-4">
+        {stats?.suggestion && (
+          <div className="card bg-bean-500/10 border-bean-600">
+            <p className="text-bean-300 text-sm">
+              💡 {stats.suggestion.note} Try{" "}
+              <span className="font-semibold">
+                {stats.suggestion.weightKg}kg × {stats.suggestion.reps}
+              </span>
+              .
+            </p>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
           <div className="card text-center">
             <p className="text-xl font-bold text-bean-400">

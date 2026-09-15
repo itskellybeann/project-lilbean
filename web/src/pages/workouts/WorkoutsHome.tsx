@@ -1,11 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import TopBar from "../../components/TopBar";
 import { api } from "../../api/client";
+
+interface MuscleVolume {
+  muscleGroup: string;
+  volume: number;
+}
 
 export default function WorkoutsHome() {
   const navigate = useNavigate();
   const [starting, setStarting] = useState(false);
+  const [muscleVolume, setMuscleVolume] = useState<MuscleVolume[]>([]);
+
+  useEffect(() => {
+    api.get<MuscleVolume[]>("/dashboard/muscle-volume?days=7").then(setMuscleVolume);
+  }, []);
 
   async function startBlank() {
     setStarting(true);
@@ -39,6 +50,25 @@ export default function WorkoutsHome() {
           <p className="font-semibold">History &amp; calendar</p>
           <p className="text-white/50 text-sm">Past workouts and volume trends</p>
         </Link>
+
+        <Link to="/workouts/prs" className="card block">
+          <p className="font-semibold">PR feed</p>
+          <p className="text-white/50 text-sm">Every weight and 1RM personal record, in order</p>
+        </Link>
+
+        {muscleVolume.length > 0 && (
+          <div className="card">
+            <p className="text-sm font-semibold mb-2">Volume by muscle group (7 days)</p>
+            <ResponsiveContainer width="100%" height={Math.max(120, muscleVolume.length * 34)}>
+              <BarChart data={muscleVolume} layout="vertical" margin={{ left: 8 }}>
+                <XAxis type="number" stroke="#666" fontSize={11} tickLine={false} />
+                <YAxis type="category" dataKey="muscleGroup" stroke="#999" fontSize={12} width={80} tickLine={false} />
+                <Tooltip contentStyle={{ background: "#1a1a1d", border: "1px solid #333338", borderRadius: 8 }} />
+                <Bar dataKey="volume" fill="#f5348c" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
     </div>
   );

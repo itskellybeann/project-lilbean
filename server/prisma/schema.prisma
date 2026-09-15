@@ -15,15 +15,19 @@ model User {
   colorAccent    String   @default("pink")
   createdAt      DateTime @default(now())
 
-  routines       Routine[]
-  workouts       Workout[]
-  customFoods    Food[]
-  recipes        Recipe[]
-  diaryEntries   DiaryEntry[]
-  target         NutritionTarget?
-  bodyMetrics    BodyMetric[]
-  progressPhotos ProgressPhoto[]
-  healthMetrics  HealthMetric[]
+  routines          Routine[]
+  workouts          Workout[]
+  customFoods       Food[]
+  recipes           Recipe[]
+  diaryEntries      DiaryEntry[]
+  target            NutritionTarget?
+  bodyMetrics       BodyMetric[]
+  progressPhotos    ProgressPhoto[]
+  healthMetrics     HealthMetric[]
+  favoriteFoods     FavoriteFood[]
+  waterIntakes      WaterIntake[]
+  goal              UserGoal?
+  pushSubscriptions PushSubscription[]
 }
 
 model Exercise {
@@ -66,6 +70,7 @@ model RoutineExercise {
   targetReps   String   @default("8-12")
   targetWeight Float?
   restSeconds  Int      @default(90)
+  supersetId   String?
 }
 
 model Workout {
@@ -96,9 +101,12 @@ model WorkoutSet {
   rpe         Float?
   isWarmup    Boolean   @default(false)
   completedAt DateTime  @default(now())
+  supersetId  String?
+  clientId    String?
 
   @@index([exerciseId])
   @@index([workoutId])
+  @@unique([workoutId, clientId])
 }
 
 model Food {
@@ -122,6 +130,18 @@ model Food {
 
   recipeItems  RecipeItem[]
   diaryEntries DiaryEntry[]
+  favoritedBy  FavoriteFood[]
+}
+
+model FavoriteFood {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodId    String
+  food      Food     @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, foodId])
 }
 
 model Recipe {
@@ -173,7 +193,41 @@ model NutritionTarget {
   protein   Float
   carbs     Float
   fat       Float
+  // Optional separate targets for rest days. When set, the API picks these
+  // instead of the main target on any date with no logged workout.
+  restCalories Float?
+  restProtein  Float?
+  restCarbs    Float?
+  restFat      Float?
   updatedAt DateTime @updatedAt
+}
+
+model WaterIntake {
+  id     String   @id @default(uuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date
+  ml     Int      @default(0)
+
+  @@unique([userId, date])
+}
+
+model UserGoal {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goalWeightKg Float?
+  updatedAt    DateTime @updatedAt
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
 }
 
 model BodyMetric {

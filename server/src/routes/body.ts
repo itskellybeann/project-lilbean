@@ -47,6 +47,51 @@ bodyRouter.delete("/metrics/:id", async (req: AuthedRequest, res) => {
   res.json({ ok: true });
 });
 
+// Goal weight + a simple linear projection based on recent weigh-ins
+bodyRouter.get("/goal", async (req: AuthedRequest, res) => {
+  const goal = await prisma.userGoal.findUnique({ where: { userId: req.userId! } });
+  if (!goal?.goalWeightKg) return res.json({ goal: null, projection: null });
+
+  const since = new Date();
+  since.setUTCDate(since.getUTCDate() - 60);
+  const metrics = await prisma.bodyMetric.findMany({
+    where: { userId: req.userId!, weightKg: { not: null }, date: { gte: since } },
+    orderBy: { date: "asc" },
+  });
+
+  let projection: { currentRateKgPerWeek: number; projectedDate: string } | null = null;
+  if (metrics.length >= 2) {
+    const first = metrics[0];
+    const last = metrics[metrics.length - 1];
+    const daysBetween = (last.date.getTime() - first.date.getTime()) / 86400000;
+    if (daysBetween >= 3 && first.weightKg != null && last.weightKg != null) {
+      const changePerDay = (last.weightKg - first.weightKg) / daysBetween;
+      const remaining = goal.goalWeightKg - last.weightKg;
+      const movingTowardGoal = (remaining > 0 && changePerDay > 0) || (remaining < 0 && changePerDay < 0);
+      if (movingTowardGoal) {
+        const daysToGoal = remaining / changePerDay;
+        const projectedDate = new Date(last.date.getTime() + daysToGoal * 86400000);
+        projection = {
+          currentRateKgPerWeek: Math.round(changePerDay * 7 * 100) / 100,
+          projectedDate: projectedDate.toISOString().slice(0, 10),
+        };
+      }
+    }
+  }
+
+  res.json({ goal, projection });
+});
+
+bodyRouter.put("/goal", async (req: AuthedRequest, res) => {
+  const { goalWeightKg } = req.body || {};
+  const goal = await prisma.userGoal.upsert({
+    where: { userId: req.userId! },
+    update: { goalWeightKg: goalWeightKg ?? null },
+    create: { userId: req.userId!, goalWeightKg: goalWeightKg ?? null },
+  });
+  res.json(goal);
+});
+
 // Progress photos
 const uploadDir = path.join(__dirname, "..", "..", "uploads", "photos");
 fs.mkdirSync(uploadDir, { recursive: true });

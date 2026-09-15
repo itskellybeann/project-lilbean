@@ -28,18 +28,41 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+const WATER_TARGET_ML = 2000;
+const WATER_STEP_ML = 250;
+
 export default function Diary() {
   const [date, setDate] = useState(todayISO());
   const [data, setData] = useState<DiaryResponse | null>(null);
+  const [waterMl, setWaterMl] = useState(0);
+  const [copying, setCopying] = useState(false);
 
   function load() {
     api.get<DiaryResponse>(`/nutrition/diary?date=${date}`).then(setData);
+    api.get<{ ml: number }>(`/nutrition/water?date=${date}`).then((w) => setWaterMl(w.ml));
   }
   useEffect(load, [date]);
 
   async function removeEntry(id: string) {
     await api.del(`/nutrition/diary/${id}`);
     load();
+  }
+
+  async function adjustWater(deltaMl: number) {
+    const result = await api.post<{ ml: number }>("/nutrition/water", { date, deltaMl });
+    setWaterMl(result.ml);
+  }
+
+  async function copyYesterday() {
+    setCopying(true);
+    try {
+      const from = shiftDate(date, -1);
+      const result = await api.post<{ copied: number }>("/nutrition/diary/copy", { fromDate: from, toDate: date });
+      if (result.copied === 0) alert("No entries found on the previous day to copy.");
+      load();
+    } finally {
+      setCopying(false);
+    }
   }
 
   const target = data?.target || { calories: 2200, protein: 150, carbs: 220, fat: 70 };
@@ -74,6 +97,27 @@ export default function Diary() {
             <MacroRing label="Fat" value={totals.fat} target={target.fat} color="#d81b70" />
           </div>
         </div>
+
+        <div className="card flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold">💧 Water</p>
+            <p className="text-white/40 text-xs">
+              {(waterMl / 1000).toFixed(2)}L / {(WATER_TARGET_ML / 1000).toFixed(1)}L
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="btn-secondary px-3 py-1.5" onClick={() => adjustWater(-WATER_STEP_ML)} disabled={waterMl <= 0}>
+              −
+            </button>
+            <button className="btn-primary px-3 py-1.5" onClick={() => adjustWater(WATER_STEP_ML)}>
+              +{WATER_STEP_ML}ml
+            </button>
+          </div>
+        </div>
+
+        <button className="btn-secondary w-full" onClick={copyYesterday} disabled={copying}>
+          {copying ? "Copying…" : "Copy previous day's diary"}
+        </button>
 
         {MEALS.map((meal) => {
           const entries = data?.entries.filter((e) => e.meal === meal) || [];

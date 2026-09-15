@@ -62,6 +62,8 @@ exercisesRouter.get("/:id/stats", async (req: AuthedRequest, res) => {
   let best1RM = 0;
   let best1RMDate: Date | null = null;
   const volumeByWorkout = new Map<string, { date: Date; volume: number }>();
+  let lastWorkoutId: string | null = null;
+  let lastWorkoutDate: Date | null = null;
 
   for (const s of sets) {
     if (!heaviestSet || s.weightKg > heaviestSet.weightKg) {
@@ -77,6 +79,35 @@ exercisesRouter.get("/:id/stats", async (req: AuthedRequest, res) => {
     const vol = s.weightKg * s.reps;
     if (existing) existing.volume += vol;
     else volumeByWorkout.set(key, { date: s.workout.startedAt, volume: vol });
+
+    // sets are ordered ascending by completedAt, so the last one processed
+    // belongs to the most recent workout
+    lastWorkoutId = s.workoutId;
+    lastWorkoutDate = s.workout.startedAt;
+  }
+
+  // Progressive overload suggestion, based on the heaviest set from the most
+  // recent workout that included this exercise: more reps than a normal working
+  // set suggests adding a little weight next time; fewer suggests chasing a rep.
+  let suggestion: { weightKg: number; reps: number; note: string } | null = null;
+  if (lastWorkoutId) {
+    const lastWorkoutSets = sets.filter((s) => s.workoutId === lastWorkoutId);
+    const topSet = lastWorkoutSets.reduce((best, s) => (s.weightKg > best.weightKg ? s : best), lastWorkoutSets[0]);
+    if (topSet) {
+      if (topSet.reps >= 8) {
+        suggestion = {
+          weightKg: Math.round((topSet.weightKg + 2.5) * 10) / 10,
+          reps: topSet.reps,
+          note: `Last time: ${topSet.weightKg}kg × ${topSet.reps}. Try adding weight.`,
+        };
+      } else {
+        suggestion = {
+          weightKg: topSet.weightKg,
+          reps: topSet.reps + 1,
+          note: `Last time: ${topSet.weightKg}kg × ${topSet.reps}. Try one more rep.`,
+        };
+      }
+    }
   }
 
   res.json({
@@ -87,5 +118,7 @@ exercisesRouter.get("/:id/stats", async (req: AuthedRequest, res) => {
       (a, b) => a.date.getTime() - b.date.getTime()
     ),
     totalSets: sets.length,
+    suggestion,
+    lastWorkoutDate,
   });
 });

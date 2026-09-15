@@ -16,6 +16,38 @@ interface Food {
   fat: number;
 }
 
+function FoodRow({
+  food,
+  isFavorite,
+  onSelect,
+  onToggleFavorite,
+}: {
+  food: Food;
+  isFavorite: boolean;
+  onSelect: () => void;
+  onToggleFavorite: () => void;
+}) {
+  return (
+    <div className="card flex items-center gap-2">
+      <button className="flex-1 text-left" onClick={onSelect}>
+        <p className="font-medium">{food.name}</p>
+        <p className="text-white/40 text-xs">
+          {Math.round(food.calories)} kcal / {food.servingSize}
+          {food.servingUnit}
+          {food.brand ? ` · ${food.brand}` : ""}
+        </p>
+      </button>
+      <button
+        className={isFavorite ? "text-bean-400 text-lg" : "text-white/20 text-lg"}
+        onClick={onToggleFavorite}
+        aria-label="Toggle favorite"
+      >
+        {isFavorite ? "★" : "☆"}
+      </button>
+    </div>
+  );
+}
+
 export default function AddFood() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -24,11 +56,19 @@ export default function AddFood() {
 
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Food[]>([]);
+  const [recent, setRecent] = useState<Food[]>([]);
+  const [favorites, setFavorites] = useState<Food[]>([]);
   const [scanning, setScanning] = useState(false);
   const [selected, setSelected] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState("100");
   const [showCustom, setShowCustom] = useState(false);
   const [custom, setCustom] = useState({ name: "", calories: "", protein: "", carbs: "", fat: "" });
+
+  function loadQuickLists() {
+    api.get<Food[]>("/foods/recent").then(setRecent);
+    api.get<Food[]>("/foods/favorites").then(setFavorites);
+  }
+  useEffect(loadQuickLists, []);
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -36,6 +76,17 @@ export default function AddFood() {
     }, 250);
     return () => clearTimeout(handle);
   }, [q]);
+
+  const favoriteIds = new Set(favorites.map((f) => f.id));
+
+  async function toggleFavorite(food: Food) {
+    if (favoriteIds.has(food.id)) {
+      await api.del(`/foods/favorites/${food.id}`);
+    } else {
+      await api.post("/foods/favorites", { foodId: food.id });
+    }
+    loadQuickLists();
+  }
 
   async function handleBarcode(code: string) {
     setScanning(false);
@@ -128,18 +179,52 @@ export default function AddFood() {
           </button>
         </div>
 
-        <div className="space-y-2">
-          {results.map((f) => (
-            <button key={f.id} className="card w-full text-left" onClick={() => setSelected(f)}>
-              <p className="font-medium">{f.name}</p>
-              <p className="text-white/40 text-xs">
-                {Math.round(f.calories)} kcal / {f.servingSize}
-                {f.servingUnit}
-                {f.brand ? ` · ${f.brand}` : ""}
-              </p>
-            </button>
-          ))}
-        </div>
+        {q.trim() ? (
+          <div className="space-y-2">
+            {results.map((f) => (
+              <FoodRow
+                key={f.id}
+                food={f}
+                isFavorite={favoriteIds.has(f.id)}
+                onSelect={() => setSelected(f)}
+                onToggleFavorite={() => toggleFavorite(f)}
+              />
+            ))}
+            {results.length === 0 && <p className="text-white/30 text-sm text-center">No matches.</p>}
+          </div>
+        ) : (
+          <>
+            {favorites.length > 0 && (
+              <div>
+                <p className="text-xs uppercase tracking-wide text-white/40 mb-2">Favorites</p>
+                <div className="space-y-2">
+                  {favorites.map((f) => (
+                    <FoodRow key={f.id} food={f} isFavorite onSelect={() => setSelected(f)} onToggleFavorite={() => toggleFavorite(f)} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {recent.length > 0 && (
+              <div>
+                <p className="text-xs uppercase tracking-wide text-white/40 mb-2 mt-3">Recent</p>
+                <div className="space-y-2">
+                  {recent.map((f) => (
+                    <FoodRow
+                      key={f.id}
+                      food={f}
+                      isFavorite={favoriteIds.has(f.id)}
+                      onSelect={() => setSelected(f)}
+                      onToggleFavorite={() => toggleFavorite(f)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            {favorites.length === 0 && recent.length === 0 && (
+              <p className="text-white/30 text-sm text-center">Search for a food, or scan a barcode.</p>
+            )}
+          </>
+        )}
 
         {!showCustom ? (
           <button className="btn-secondary w-full" onClick={() => setShowCustom(true)}>

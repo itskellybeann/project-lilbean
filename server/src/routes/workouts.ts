@@ -85,9 +85,20 @@ workoutsRouter.post("/:id/sets", async (req: AuthedRequest, res) => {
   const workout = await prisma.workout.findFirst({ where: { id: req.params.id, userId: req.userId! } });
   if (!workout) return res.status(404).json({ error: "Not found" });
 
-  const { exerciseId, setNumber, weightKg, reps, rpe, isWarmup } = req.body || {};
+  const { exerciseId, setNumber, weightKg, reps, rpe, isWarmup, supersetId, clientId } = req.body || {};
   if (!exerciseId || weightKg == null || reps == null) {
     return res.status(400).json({ error: "exerciseId, weightKg, reps required" });
+  }
+
+  // clientId lets the offline queue safely replay a queued set creation without
+  // double-logging it if the first attempt actually succeeded before the client
+  // lost track of the response (e.g. request sent, connection dropped before reply).
+  if (clientId) {
+    const existing = await prisma.workoutSet.findUnique({
+      where: { workoutId_clientId: { workoutId: workout.id, clientId } },
+      include: { exercise: true },
+    });
+    if (existing) return res.status(201).json(existing);
   }
 
   const set = await prisma.workoutSet.create({
@@ -99,6 +110,8 @@ workoutsRouter.post("/:id/sets", async (req: AuthedRequest, res) => {
       reps,
       rpe: rpe ?? null,
       isWarmup: !!isWarmup,
+      supersetId: supersetId ?? null,
+      clientId: clientId ?? null,
     },
     include: { exercise: true },
   });
