@@ -27,7 +27,7 @@ export default function WorkoutHistory() {
           const totalVolume = w.sets.reduce((sum, s) => sum + s.weightKg * s.reps, 0);
           const exerciseNames = Array.from(new Set(w.sets.map((s) => s.exercise.name)));
           return (
-            <Link key={w.id} to={w.endedAt ? "#" : `/workouts/active/${w.id}`} className="card block">
+            <Link key={w.id} to={`/workouts/active/${w.id}`} className="card block">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-semibold">{w.name}</p>

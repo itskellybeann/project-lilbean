@@ -97,6 +97,8 @@ export default function ActiveWorkout() {
     load();
   }
 
+  const isCompleted = !!workout?.endedAt;
+
   if (picking) {
     return (
       <div>
@@ -116,13 +118,17 @@ export default function ActiveWorkout() {
       <TopBar
         title={workout?.name || "Workout"}
         right={
-          <button className="btn-primary text-sm px-3 py-1.5" onClick={finish}>
-            Finish
-          </button>
+          isCompleted ? (
+            <span className="text-bean-400 text-sm font-semibold px-3 py-1.5">Completed ✓</span>
+          ) : (
+            <button className="btn-primary text-sm px-3 py-1.5" onClick={finish}>
+              Finish
+            </button>
+          )
         }
       />
       <div className="p-4 space-y-4">
-        {timer.secondsLeft > 0 && (
+        {!isCompleted && timer.secondsLeft > 0 && (
           <div className="card bg-bean-500/10 border-bean-600 text-center">
             <p className="text-xs text-bean-300 uppercase tracking-wide">Rest</p>
             <p className="text-3xl font-bold tabular-nums">
@@ -131,37 +137,38 @@ export default function ActiveWorkout() {
           </div>
         )}
 
-        {!activeExercise ? (
-          <button className="btn-primary w-full" onClick={() => setPicking(true)}>
-            + Add exercise
-          </button>
-        ) : (
-          <div className="card">
-            <div className="flex items-center justify-between mb-2">
-              <p className="font-semibold">{activeExercise.name}</p>
-              <button className="text-white/40 text-sm" onClick={() => setPicking(true)}>
-                Switch
+        {!isCompleted &&
+          (!activeExercise ? (
+            <button className="btn-primary w-full" onClick={() => setPicking(true)}>
+              + Add exercise
+            </button>
+          ) : (
+            <div className="card">
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-semibold">{activeExercise.name}</p>
+                <button className="text-white/40 text-sm" onClick={() => setPicking(true)}>
+                  Switch
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="label">Weight (kg)</label>
+                  <input className="input" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
+                </div>
+                <div>
+                  <label className="label">Reps</label>
+                  <input className="input" inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)} />
+                </div>
+                <div>
+                  <label className="label">RPE</label>
+                  <input className="input" inputMode="decimal" value={rpe} onChange={(e) => setRpe(e.target.value)} />
+                </div>
+              </div>
+              <button className="btn-primary w-full mt-3" onClick={logSet}>
+                Log set
               </button>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <label className="label">Weight (kg)</label>
-                <input className="input" inputMode="decimal" value={weight} onChange={(e) => setWeight(e.target.value)} />
-              </div>
-              <div>
-                <label className="label">Reps</label>
-                <input className="input" inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)} />
-              </div>
-              <div>
-                <label className="label">RPE</label>
-                <input className="input" inputMode="decimal" value={rpe} onChange={(e) => setRpe(e.target.value)} />
-              </div>
-            </div>
-            <button className="btn-primary w-full mt-3" onClick={logSet}>
-              Log set
-            </button>
-          </div>
-        )}
+          ))}
 
         {Array.from(exerciseGroups.entries()).map(([exId, sets]) => (
           <div key={exId} className="card">

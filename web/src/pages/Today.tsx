@@ -5,9 +5,22 @@ import TopBar from "../components/TopBar";
 import MacroRing from "../components/MacroRing";
 import { useAuth } from "../state/auth";
 
+interface TodaySet {
+  weightKg: number;
+  reps: number;
+  exercise: { name: string };
+}
+
+interface TodayWorkout {
+  id: string;
+  name: string;
+  endedAt: string | null;
+  sets: TodaySet[];
+}
+
 interface TodayData {
   activeWorkout: { id: string; name: string; startedAt: string } | null;
-  todaysWorkouts: { id: string; sets: any[] }[];
+  todaysWorkouts: TodayWorkout[];
   macroTotals: { calories: number; protein: number; carbs: number; fat: number };
   target: { calories: number; protein: number; carbs: number; fat: number } | null;
   todayHealth: { sleepMinutes: number | null; restingHr: number | null; steps: number | null } | null;
@@ -29,6 +42,7 @@ export default function Today() {
 
   const target = data?.target || { calories: 2200, protein: 150, carbs: 220, fat: 70 };
   const totals = data?.macroTotals || { calories: 0, protein: 0, carbs: 0, fat: 0 };
+  const completedToday = (data?.todaysWorkouts || []).filter((w) => w.endedAt);
 
   return (
     <div>
@@ -46,10 +60,33 @@ export default function Today() {
               <span className="text-2xl">→</span>
             </div>
           </Link>
-        ) : (
+        ) : completedToday.length === 0 ? (
           <Link to="/workouts" className="card block text-center">
             <p className="text-white/60 text-sm">No workout started today</p>
             <p className="text-bean-400 font-semibold mt-1">+ Start a workout</p>
+          </Link>
+        ) : null}
+
+        {completedToday.map((w) => {
+          const volume = w.sets.reduce((sum, s) => sum + s.weightKg * s.reps, 0);
+          const exerciseNames = Array.from(new Set(w.sets.map((s) => s.exercise.name)));
+          return (
+            <Link key={w.id} to={`/workouts/active/${w.id}`} className="card block">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-bean-400 text-xs font-semibold uppercase tracking-wide">Completed today ✓</p>
+                  <p className="font-bold">{w.name}</p>
+                  <p className="text-white/40 text-xs mt-0.5 truncate">{exerciseNames.join(", ") || "No sets logged"}</p>
+                </div>
+                <p className="text-sm text-white/50 whitespace-nowrap">{Math.round(volume)}kg</p>
+              </div>
+            </Link>
+          );
+        })}
+
+        {!data?.activeWorkout && completedToday.length > 0 && (
+          <Link to="/workouts" className="btn-secondary w-full text-center block">
+            + Start another workout
           </Link>
         )}
 

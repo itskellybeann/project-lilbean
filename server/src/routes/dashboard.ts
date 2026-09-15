@@ -69,7 +69,8 @@ dashboardRouter.get("/today", async (req: AuthedRequest, res) => {
       prisma.workout.findFirst({ where: { userId, endedAt: null }, orderBy: { startedAt: "desc" } }),
       prisma.workout.findMany({
         where: { userId, startedAt: { gte: todayStart, lte: todayEnd } },
-        include: { sets: true },
+        include: { sets: { include: { exercise: true } } },
+        orderBy: { startedAt: "desc" },
       }),
       prisma.diaryEntry.findMany({ where: { userId, date: today } }),
       prisma.nutritionTarget.findUnique({ where: { userId } }),
