@@ -28,6 +28,20 @@ interface Food {
   fat: number;
 }
 
+interface RecipeItem {
+  id: string;
+  quantity: number;
+  food: Food;
+}
+
+interface Recipe {
+  id: string;
+  name: string;
+  servings: number;
+  items: RecipeItem[];
+  macros: { perServing: { calories: number; protein: number; carbs: number; fat: number } };
+}
+
 function FoodRow({
   food,
   isFavorite,
@@ -70,9 +84,12 @@ export default function AddFood() {
   const [results, setResults] = useState<Food[]>([]);
   const [recent, setRecent] = useState<Food[]>([]);
   const [favorites, setFavorites] = useState<Food[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [scanning, setScanning] = useState(false);
   const [selected, setSelected] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState("100");
+  const [loggingRecipe, setLoggingRecipe] = useState<Recipe | null>(null);
+  const [itemQty, setItemQty] = useState<Record<string, string>>({});
   const [showCustom, setShowCustom] = useState(false);
   const [custom, setCustom] = useState({
     name: "",
@@ -91,6 +108,7 @@ export default function AddFood() {
   function loadQuickLists() {
     api.get<Food[]>("/foods/recent").then(setRecent);
     api.get<Food[]>("/foods/favorites").then(setFavorites);
+    api.get<Recipe[]>("/recipes").then(setRecipes);
   }
   useEffect(loadQuickLists, []);
 
@@ -130,6 +148,22 @@ export default function AddFood() {
       meal,
       foodId: selected.id,
       quantity: Number(quantity),
+    });
+    navigate("/nutrition");
+  }
+
+  function openRecipe(recipe: Recipe) {
+    setItemQty(Object.fromEntries(recipe.items.map((i) => [i.food.id, String(i.quantity)])));
+    setLoggingRecipe(recipe);
+  }
+
+  async function logRecipe() {
+    if (!loggingRecipe) return;
+    await api.post("/nutrition/diary", {
+      date,
+      meal,
+      recipeId: loggingRecipe.id,
+      items: loggingRecipe.items.map((i) => ({ foodId: i.food.id, quantity: Number(itemQty[i.food.id] || 0) })),
     });
     navigate("/nutrition");
   }
@@ -223,6 +257,71 @@ export default function AddFood() {
     );
   }
 
+  if (loggingRecipe) {
+    const totals = loggingRecipe.items.reduce(
+      (acc, i) => {
+        const qty = Number(itemQty[i.food.id] || 0);
+        const factor = qty / i.food.servingSize;
+        acc.calories += i.food.calories * factor;
+        acc.protein += i.food.protein * factor;
+        acc.carbs += i.food.carbs * factor;
+        acc.fat += i.food.fat * factor;
+        return acc;
+      },
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    );
+    return (
+      <div>
+        <TopBar title={loggingRecipe.name} />
+        <div className="p-4 space-y-4">
+          <div className="card space-y-3">
+            <p className="text-xs text-white/40">Adjust each ingredient's weight for this time — the saved recipe is unchanged.</p>
+            {loggingRecipe.items.map((i) => (
+              <div key={i.id} className="flex items-center gap-2">
+                <span className="flex-1 text-sm truncate">{i.food.name}</span>
+                <input
+                  className="input w-20 text-right"
+                  inputMode="decimal"
+                  value={itemQty[i.food.id] ?? ""}
+                  onChange={(e) => setItemQty((q) => ({ ...q, [i.food.id]: e.target.value }))}
+                />
+                <span className="text-white/40 text-xs w-8">{i.food.servingUnit}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="card">
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div>
+                <p className="font-bold">{Math.round(totals.calories)}</p>
+                <p className="text-[10px] text-white/40">kcal</p>
+              </div>
+              <div>
+                <p className="font-bold">{Math.round(totals.protein)}g</p>
+                <p className="text-[10px] text-white/40">protein</p>
+              </div>
+              <div>
+                <p className="font-bold">{Math.round(totals.carbs)}g</p>
+                <p className="text-[10px] text-white/40">carbs</p>
+              </div>
+              <div>
+                <p className="font-bold">{Math.round(totals.fat)}g</p>
+                <p className="text-[10px] text-white/40">fat</p>
+              </div>
+            </div>
+          </div>
+
+          <button className="btn-primary w-full" onClick={logRecipe}>
+            Add to {meal}
+          </button>
+          <button className="btn-secondary w-full" onClick={() => setLoggingRecipe(null)}>
+            Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <TopBar title={`Add to ${meal}`} />
@@ -308,7 +407,24 @@ export default function AddFood() {
                 </div>
               </div>
             )}
-            {favorites.length === 0 && recent.length === 0 && (
+            {recipes.length > 0 && (
+              <div>
+                <p className="text-xs uppercase tracking-wide text-white/40 mb-2 mt-3">Recipes</p>
+                <div className="space-y-2">
+                  {recipes.map((r) => (
+                    <button key={r.id} className="card w-full text-left flex items-center gap-2" onClick={() => openRecipe(r)}>
+                      <span className="flex items-center justify-center w-9 h-9 rounded-full bg-violet-500/15 text-lg shrink-0">🍲</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium">{r.name}</p>
+                        <p className="text-white/40 text-xs">{Math.round(r.macros.perServing.calories)} kcal / serving</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {favorites.length === 0 && recent.length === 0 && recipes.length === 0 && (
               <p className="text-white/30 text-sm text-center">Search for a food, or scan a barcode.</p>
             )}
           </>

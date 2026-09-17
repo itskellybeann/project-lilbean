@@ -62,9 +62,11 @@ nutritionRouter.post("/diary/copy", async (req: AuthedRequest, res) => {
   res.json({ copied: source.length });
 });
 
-// Add a diary entry from a food (quantity = amount in food's serving unit, e.g. grams) or a recipe (quantity = servings)
+// Add a diary entry from a food (quantity = amount in food's serving unit, e.g. grams) or a recipe
+// (quantity = servings, unless `items` overrides individual ingredient weights for this log only —
+// the recipe's own saved quantities are left untouched).
 nutritionRouter.post("/diary", async (req: AuthedRequest, res) => {
-  const { date, meal, foodId, recipeId, quantity } = req.body || {};
+  const { date, meal, foodId, recipeId, quantity, items: itemOverrides } = req.body || {};
   if (!date || !meal || (!foodId && !recipeId)) {
     return res.status(400).json({ error: "date, meal, and foodId or recipeId required" });
   }
@@ -87,13 +89,31 @@ nutritionRouter.post("/diary", async (req: AuthedRequest, res) => {
       include: { items: { include: { food: true } } },
     });
     if (!recipe) return res.status(404).json({ error: "Recipe not found" });
-    const perServing = macrosForRecipe(recipe).perServing;
-    macros = {
-      calories: perServing.calories * qty,
-      protein: perServing.protein * qty,
-      carbs: perServing.carbs * qty,
-      fat: perServing.fat * qty,
-    };
+
+    if (Array.isArray(itemOverrides) && itemOverrides.length) {
+      const foodById = new Map(recipe.items.map((i) => [i.foodId, i.food]));
+      macros = itemOverrides.reduce(
+        (acc: typeof macros, o: { foodId: string; quantity: number }) => {
+          const food = foodById.get(o.foodId);
+          if (!food || !o.quantity) return acc;
+          const factor = o.quantity / food.servingSize;
+          acc.calories += food.calories * factor;
+          acc.protein += food.protein * factor;
+          acc.carbs += food.carbs * factor;
+          acc.fat += food.fat * factor;
+          return acc;
+        },
+        { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      );
+    } else {
+      const perServing = macrosForRecipe(recipe).perServing;
+      macros = {
+        calories: perServing.calories * qty,
+        protein: perServing.protein * qty,
+        carbs: perServing.carbs * qty,
+        fat: perServing.fat * qty,
+      };
+    }
   }
 
   const entry = await prisma.diaryEntry.create({
