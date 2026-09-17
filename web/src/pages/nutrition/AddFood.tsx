@@ -85,6 +85,7 @@ export default function AddFood() {
   });
   const [photoNote, setPhotoNote] = useState<{ confidence: string; notes: string } | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
 
   function loadQuickLists() {
@@ -152,6 +153,7 @@ export default function AddFood() {
   async function analyzePhoto() {
     const file = photoRef.current?.files?.[0];
     if (!file) return;
+    setPhotoPreview(URL.createObjectURL(file));
     setAnalyzing(true);
     setPhotoNote(null);
     try {
@@ -171,6 +173,7 @@ export default function AddFood() {
       setShowCustom(true);
     } catch (err: any) {
       alert(err?.message || "Couldn't analyze that photo");
+      setPhotoPreview(null);
     } finally {
       setAnalyzing(false);
       if (photoRef.current) photoRef.current.value = "";
@@ -239,8 +242,29 @@ export default function AddFood() {
           className="hidden"
           onChange={analyzePhoto}
         />
-        <button className="btn-secondary w-full" disabled={analyzing} onClick={() => photoRef.current?.click()}>
-          {analyzing ? "Analyzing photo…" : "🧁 Snap a photo to estimate calories"}
+        <button
+          className="relative w-full overflow-hidden rounded-2xl p-4 flex items-center gap-3 text-left bg-gradient-to-br from-bean-500 via-bean-600 to-purple-700 shadow-lg shadow-bean-900/30 active:scale-[0.99] transition-transform disabled:opacity-70"
+          disabled={analyzing}
+          onClick={() => photoRef.current?.click()}
+        >
+          <div className="absolute -right-6 -top-8 w-28 h-28 rounded-full bg-white/10 blur-md" />
+          <div className="absolute -right-2 bottom-0 w-16 h-16 rounded-full bg-white/10" />
+          <div className="relative flex items-center justify-center w-11 h-11 rounded-full bg-white/15 text-2xl shrink-0">
+            {analyzing ? (
+              <span className="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+            ) : (
+              "📸"
+            )}
+          </div>
+          <div className="relative flex-1">
+            <p className="font-semibold text-white text-sm">
+              {analyzing ? "Analyzing your photo…" : "Snap a photo, get instant macros"}
+            </p>
+            <p className="text-white/70 text-xs mt-0.5">
+              {analyzing ? "Claude is estimating calories and macros" : "AI-powered calorie & macro estimate"}
+            </p>
+          </div>
+          {!analyzing && <span className="relative text-white/50 text-lg">›</span>}
         </button>
 
         {q.trim() ? (
@@ -298,9 +322,30 @@ export default function AddFood() {
           <div className="card space-y-2">
             <p className="font-semibold text-sm">Custom food</p>
             {photoNote && (
-              <p className="text-xs text-bean-400 bg-bean-400/10 rounded-lg px-2 py-1.5">
-                AI estimate ({photoNote.confidence} confidence) — {photoNote.notes} Double-check before saving.
-              </p>
+              <div className="flex gap-3 rounded-xl border border-bean-500/30 bg-gradient-to-br from-bean-500/10 to-purple-700/10 p-3">
+                {photoPreview && (
+                  <img src={photoPreview} alt="" className="w-14 h-14 rounded-lg object-cover shrink-0 border border-white/10" />
+                )}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-sm">✨</span>
+                    <span className="text-xs font-semibold text-bean-300">AI estimate</span>
+                    <span
+                      className={
+                        "text-[10px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded-full " +
+                        (photoNote.confidence === "high"
+                          ? "bg-emerald-500/20 text-emerald-300"
+                          : photoNote.confidence === "medium"
+                          ? "bg-amber-500/20 text-amber-300"
+                          : "bg-white/10 text-white/50")
+                      }
+                    >
+                      {photoNote.confidence} confidence
+                    </span>
+                  </div>
+                  <p className="text-xs text-white/60 mt-1">{photoNote.notes} Double-check before saving.</p>
+                </div>
+              </div>
             )}
             <input className="input" placeholder="Name" value={custom.name} onChange={(e) => setCustom((c) => ({ ...c, name: e.target.value }))} />
             <div className="grid grid-cols-2 gap-2">
