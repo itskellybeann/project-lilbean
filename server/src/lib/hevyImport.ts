@@ -36,12 +36,15 @@ const MONTHS: Record<string, number> = {
 };
 
 // Handles ISO-ish strings and Hevy's "25 Dec 2023, 09:15" style export format.
+// The Hevy-specific regex is tried FIRST and anchors it explicitly to UTC: the
+// generic `new Date(trimmed)` fallback below actually parses that same format
+// successfully too, but as a *local* time in whatever timezone the server runs
+// in, silently shifting every imported date/time (and sometimes the calendar
+// day) by the server's UTC offset. Only fall through to it for genuinely
+// different/ISO formats this regex doesn't match.
 function parseHevyDate(raw: string): Date | null {
   if (!raw) return null;
   const trimmed = raw.trim();
-
-  const iso = new Date(trimmed);
-  if (!isNaN(iso.getTime())) return iso;
 
   const match = trimmed.match(/^(\d{1,2})\s+(\w{3})\w*\s+(\d{4}),?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
   if (match) {
@@ -51,6 +54,10 @@ function parseHevyDate(raw: string): Date | null {
       return new Date(Date.UTC(Number(year), month, Number(day), Number(hour), Number(minute), Number(second || 0)));
     }
   }
+
+  const iso = new Date(trimmed);
+  if (!isNaN(iso.getTime())) return iso;
+
   return null;
 }
 

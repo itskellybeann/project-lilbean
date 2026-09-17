@@ -32,7 +32,13 @@ workoutsRouter.get("/", async (req: AuthedRequest, res) => {
 workoutsRouter.get("/:id", async (req: AuthedRequest, res) => {
   const workout = await prisma.workout.findFirst({
     where: { id: req.params.id, userId: req.userId! },
-    include: { sets: { include: { exercise: true }, orderBy: { completedAt: "asc" } }, routine: true },
+    include: {
+      sets: { include: { exercise: true }, orderBy: { completedAt: "asc" } },
+      // Nested so a workout started "from a routine" can actually show its planned
+      // exercises/target sets/reps — starting one previously stored the link but
+      // never surfaced the plan anywhere, making it behave exactly like a blank workout.
+      routine: { include: { exercises: { include: { exercise: true }, orderBy: { order: "asc" } } } },
+    },
   });
   if (!workout) return res.status(404).json({ error: "Not found" });
   res.json(workout);

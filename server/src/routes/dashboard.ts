@@ -122,7 +122,11 @@ dashboardRouter.get("/prs", async (req: AuthedRequest, res) => {
     orderBy: { completedAt: "asc" },
   });
 
-  const bestWeight = new Map<string, number>();
+  // Keyed by exerciseId -> the best (weightKg, reps) pair seen so far. Comparing on
+  // weight alone means a bodyweight exercise (always weightKg=0) can never register a
+  // "weight" PR no matter how many more reps it gets — 0 > 0 is always false — so ties
+  // on weight still count as a new best if reps improved.
+  const bestSet = new Map<string, { weightKg: number; reps: number }>();
   const best1RM = new Map<string, number>();
   const events: {
     type: "weight" | "1rm";
@@ -136,9 +140,10 @@ dashboardRouter.get("/prs", async (req: AuthedRequest, res) => {
   }[] = [];
 
   for (const s of sets) {
-    const prevWeight = bestWeight.get(s.exerciseId) ?? 0;
-    if (s.weightKg > prevWeight) {
-      bestWeight.set(s.exerciseId, s.weightKg);
+    const prevBest = bestSet.get(s.exerciseId);
+    const isNewBest = !prevBest || s.weightKg > prevBest.weightKg || (s.weightKg === prevBest.weightKg && s.reps > prevBest.reps);
+    if (isNewBest) {
+      bestSet.set(s.exerciseId, { weightKg: s.weightKg, reps: s.reps });
       events.push({
         type: "weight",
         exerciseId: s.exerciseId,
@@ -151,20 +156,26 @@ dashboardRouter.get("/prs", async (req: AuthedRequest, res) => {
       });
     }
 
-    const est = estimate1RM(s.weightKg, s.reps);
-    const prev1RM = best1RM.get(s.exerciseId) ?? 0;
-    if (est > prev1RM) {
-      best1RM.set(s.exerciseId, est);
-      events.push({
-        type: "1rm",
-        exerciseId: s.exerciseId,
-        exerciseName: s.exercise.name,
-        weightKg: s.weightKg,
-        reps: s.reps,
-        value: est,
-        date: s.workout.startedAt,
-        workoutName: s.workout.name,
-      });
+    // The Epley estimate is definitionally 0 at weightKg=0 (a 1-rep-max *weight* isn't
+    // a meaningful concept for a pure-bodyweight set) — the rep-PR handled above is the
+    // right signal there, so skip 1RM tracking entirely rather than let a fixed 0 lock
+    // out every future set for that exercise.
+    if (s.weightKg > 0) {
+      const est = estimate1RM(s.weightKg, s.reps);
+      const prev1RM = best1RM.get(s.exerciseId) ?? 0;
+      if (est > prev1RM) {
+        best1RM.set(s.exerciseId, est);
+        events.push({
+          type: "1rm",
+          exerciseId: s.exerciseId,
+          exerciseName: s.exercise.name,
+          weightKg: s.weightKg,
+          reps: s.reps,
+          value: est,
+          date: s.workout.startedAt,
+          workoutName: s.workout.name,
+        });
+      }
     }
   }
 

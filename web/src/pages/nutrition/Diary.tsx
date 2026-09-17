@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import TopBar from "../../components/TopBar";
 import MacroRing from "../../components/MacroRing";
 import { api } from "../../api/client";
+import { todayLocalISO } from "../../lib/date";
 
 interface DiaryEntry {
   id: string;
@@ -24,15 +25,11 @@ interface DiaryResponse {
 
 const MEALS = ["breakfast", "lunch", "dinner", "snack"];
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 const WATER_TARGET_ML = 2000;
 const WATER_STEP_ML = 250;
 
 export default function Diary() {
-  const [date, setDate] = useState(todayISO());
+  const [date, setDate] = useState(todayLocalISO());
   const [data, setData] = useState<DiaryResponse | null>(null);
   const [waterMl, setWaterMl] = useState(0);
   const [copying, setCopying] = useState(false);

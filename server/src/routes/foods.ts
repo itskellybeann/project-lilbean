@@ -28,6 +28,12 @@ foodsRouter.post("/", async (req: AuthedRequest, res) => {
   if (!name || calories == null || protein == null || carbs == null || fat == null) {
     return res.status(400).json({ error: "name, calories, protein, carbs, fat required" });
   }
+  // Every macro lookup for this food divides by servingSize (quantity / food.servingSize) —
+  // 0 or negative silently produces Infinity/NaN there, which JSON turns into a bare `null`
+  // wherever it's used, corrupting diary/recipe totals with no visible error.
+  if (servingSize != null && Number(servingSize) <= 0) {
+    return res.status(400).json({ error: "servingSize must be greater than 0" });
+  }
   const food = await prisma.food.create({
     data: {
       name,

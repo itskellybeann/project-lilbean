@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import TopBar from "../../components/TopBar";
 import BarcodeScanner from "../../components/BarcodeScanner";
 import { api } from "../../api/client";
+import { todayLocalISO } from "../../lib/date";
 
 interface FoodEstimate {
   name: string;
@@ -42,6 +43,15 @@ interface Recipe {
   macros: { perServing: { calories: number; protein: number; carbs: number; fat: number } };
 }
 
+// Tolerates a comma decimal separator and falls back to 0 for anything else
+// unparseable, instead of letting NaN silently poison a macro total or get
+// serialized to `null` and skipped without any error on the way to the server.
+function toNum(raw: string | undefined): number {
+  if (!raw) return 0;
+  const n = Number(raw.trim().replace(",", "."));
+  return isNaN(n) ? 0 : n;
+}
+
 function FoodRow({
   food,
   isFavorite,
@@ -77,7 +87,7 @@ function FoodRow({
 export default function AddFood() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const date = params.get("date") || new Date().toISOString().slice(0, 10);
+  const date = params.get("date") || todayLocalISO();
   const meal = params.get("meal") || "snack";
 
   const [q, setQ] = useState("");
@@ -130,11 +140,19 @@ export default function AddFood() {
     loadQuickLists();
   }
 
+  // Amount defaults to the food's own serving size (e.g. "1 bowl" from an AI photo
+  // estimate, or 30g for a single cracker) rather than a flat 100 — otherwise picking
+  // a food whose serving isn't ~100 silently logs it at up to 100x the real amount.
+  function selectFood(food: Food) {
+    setSelected(food);
+    setQuantity(String(food.servingSize));
+  }
+
   async function handleBarcode(code: string) {
     setScanning(false);
     try {
       const food = await api.get<Food>(`/foods/barcode/${code}`);
-      setSelected(food);
+      selectFood(food);
     } catch {
       alert("Product not found. You can add it manually below.");
       setShowCustom(true);
@@ -173,14 +191,18 @@ export default function AddFood() {
       date,
       meal,
       recipeId: loggingRecipe.id,
-      items: loggingRecipe.items.map((i) => ({ foodId: i.food.id, quantity: Number(itemQty[i.id] || 0) })),
+      items: loggingRecipe.items.map((i) => ({ foodId: i.food.id, quantity: toNum(itemQty[i.id]) })),
     });
     navigate("/nutrition");
   }
 
   async function saveCustomAndLog() {
     if (!custom.name || !custom.calories) return;
-    const servingSize = Number(custom.servingSize || 100);
+    // custom.servingSize is a string, so "0" is truthy and would slip past `|| 100` —
+    // check the parsed number directly so a 0/blank/negative serving size falls back
+    // instead of creating a food that divides every future lookup by zero.
+    const parsedServingSize = Number(custom.servingSize);
+    const servingSize = parsedServingSize > 0 ? parsedServingSize : 100;
     const food = await api.post<Food>("/foods", {
       name: custom.name,
       calories: Number(custom.calories),
@@ -270,7 +292,7 @@ export default function AddFood() {
   if (loggingRecipe) {
     const totals = loggingRecipe.items.reduce(
       (acc, i) => {
-        const qty = Number(itemQty[i.id] || 0);
+        const qty = toNum(itemQty[i.id]);
         const factor = qty / i.food.servingSize;
         acc.calories += i.food.calories * factor;
         acc.protein += i.food.protein * factor;
@@ -383,7 +405,7 @@ export default function AddFood() {
                 key={f.id}
                 food={f}
                 isFavorite={favoriteIds.has(f.id)}
-                onSelect={() => setSelected(f)}
+                onSelect={() => selectFood(f)}
                 onToggleFavorite={() => toggleFavorite(f)}
               />
             ))}
@@ -396,7 +418,7 @@ export default function AddFood() {
                 <p className="text-xs uppercase tracking-wide text-white/40 mb-2">Favorites</p>
                 <div className="space-y-2">
                   {favorites.map((f) => (
-                    <FoodRow key={f.id} food={f} isFavorite onSelect={() => setSelected(f)} onToggleFavorite={() => toggleFavorite(f)} />
+                    <FoodRow key={f.id} food={f} isFavorite onSelect={() => selectFood(f)} onToggleFavorite={() => toggleFavorite(f)} />
                   ))}
                 </div>
               </div>
@@ -410,7 +432,7 @@ export default function AddFood() {
                       key={f.id}
                       food={f}
                       isFavorite={favoriteIds.has(f.id)}
-                      onSelect={() => setSelected(f)}
+                      onSelect={() => selectFood(f)}
                       onToggleFavorite={() => toggleFavorite(f)}
                     />
                   ))}
