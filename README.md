@@ -1,8 +1,8 @@
 # LilBean Fitness
 
 A self-hosted, installable PWA that replaces Hevy (workouts/strength), MyFitnessPal
-(nutrition/macros), and adds body-progress tracking and a manual RingConn/health-data
-import — all backed by your own Postgres database on your NAS.
+(nutrition/macros), and adds body-progress tracking — all backed by your own Postgres
+database on your NAS.
 
 Two accounts, fully separate data, shared "today" dashboard concept per user.
 
@@ -60,17 +60,16 @@ Two accounts, fully separate data, shared "today" dashboard concept per user.
   and the app picks automatically based on whether you logged a workout that day
 - 14-day calorie/macro trend charts
 
-**Body & health**
+**Body**
 - Weight (lbs) / body-fat % / tape measurements, with a chart for weight and for
   each measurement you track (waist, chest, arms, ...)
 - **Goal weight** with a projected date, based on your recent rate of change
 - Progress photo gallery (uploaded straight from your phone camera), with a
   **before/after comparison view** once you have two or more photos
-- Ring/sleep data: manual entry or bulk CSV/JSON import (see note below)
 
 **Combined / household**
 - "Today" dashboard: active workout, macro + water totals, workout + logging
-  streaks, latest ring/body stats, one tap into any section
+  streaks, latest weight, one tap into any section
 - **Household view** (Settings → Household): both accounts' streaks and today's
   status side by side — no diary contents or photos, just a shared status check
 - **Data export**: Settings → Export my data, a full JSON dump of your own
@@ -78,16 +77,6 @@ Two accounts, fully separate data, shared "today" dashboard concept per user.
 - **Push notifications** (optional): a daily nudge if nothing's been logged yet.
   Needs a one-time VAPID key setup (see `.env.example`) and, importantly,
   **HTTPS** — see the note below.
-
-### A note on RingConn
-
-RingConn has no public developer API — your ring's data lives in the RingConn app,
-with only occasional Apple Health / Google Fit export depending on your plan. There's
-no button we can wire up for automatic live sync. What's built instead: a `/body/health`
-screen where you can either type in a night's sleep/HR/HRV/steps by hand, or paste a
-CSV/JSON export (from RingConn's export feature, or from Apple Health/Google Fit if you
-route RingConn data there) for bulk import. If RingConn ships a public API in the future,
-`server/src/routes/health.ts` is the only file that needs a real integration added.
 
 ### A note on AI food photo analysis
 

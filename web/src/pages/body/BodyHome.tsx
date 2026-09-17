@@ -103,16 +103,10 @@ export default function BodyHome() {
     <div>
       <TopBar title="Body" />
       <div className="p-4 space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <Link to="/body/photos" className="card text-center bg-gradient-to-br from-violet-500/10 to-transparent border-violet-500/25">
-            <p className="text-2xl">📸</p>
-            <p className="text-sm font-semibold mt-1">Progress photos</p>
-          </Link>
-          <Link to="/body/health" className="card text-center bg-gradient-to-br from-teal-400/10 to-transparent border-teal-500/25">
-            <p className="text-2xl">💍</p>
-            <p className="text-sm font-semibold mt-1">Ring &amp; sleep data</p>
-          </Link>
-        </div>
+        <Link to="/body/photos" className="card flex items-center gap-3 bg-gradient-to-br from-violet-500/10 to-transparent border-violet-500/25">
+          <span className="text-2xl">📸</span>
+          <p className="text-sm font-semibold">Progress photos</p>
+        </Link>
 
         {chartData.length > 1 && (
           <div className="card">

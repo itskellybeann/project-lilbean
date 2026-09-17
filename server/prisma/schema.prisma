@@ -23,7 +23,6 @@ model User {
   target            NutritionTarget?
   bodyMetrics       BodyMetric[]
   progressPhotos    ProgressPhoto[]
-  healthMetrics     HealthMetric[]
   favoriteFoods     FavoriteFood[]
   waterIntakes      WaterIntake[]
   goal              UserGoal?
@@ -252,21 +251,4 @@ model ProgressPhoto {
   createdAt DateTime @default(now())
 
   @@index([userId, date])
-}
-
-model HealthMetric {
-  id            String   @id @default(uuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date          DateTime @db.Date
-  source        String   @default("manual")
-  sleepMinutes  Int?
-  restingHr     Int?
-  hrv           Float?
-  steps         Int?
-  spo2          Float?
-  caloriesBurned Float?
-  raw           Json?
-
-  @@unique([userId, date, source])
 }

@@ -24,7 +24,6 @@ interface TodayData {
   todaysWorkouts: TodayWorkout[];
   macroTotals: { calories: number; protein: number; carbs: number; fat: number };
   target: { calories: number; protein: number; carbs: number; fat: number } | null;
-  todayHealth: { sleepMinutes: number | null; restingHr: number | null; steps: number | null } | null;
   latestBodyMetric: { weightKg: number | null; date: string } | null;
   streaks: { workout: number; logging: number };
   waterMl: number;
@@ -119,29 +118,23 @@ export default function Today() {
           </div>
         </div>
 
-        <div className="card">
-          <p className="text-sm font-semibold mb-2">Ring &amp; body</p>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div>
-              <p className="text-lg font-bold text-teal-400">
-                {data?.todayHealth?.sleepMinutes ? `${Math.round(data.todayHealth.sleepMinutes / 60)}h` : "—"}
-              </p>
-              <p className="text-[11px] text-white/40">Sleep</p>
-            </div>
-            <div>
-              <p className="text-lg font-bold text-bean-400">{data?.todayHealth?.restingHr ?? "—"}</p>
-              <p className="text-[11px] text-white/40">Resting HR</p>
-            </div>
-            <div>
-              <p className="text-lg font-bold text-violet-400">
-                {data?.latestBodyMetric?.weightKg ? `${formatLb(data.latestBodyMetric.weightKg)}lb` : "—"}
-              </p>
-              <p className="text-[11px] text-white/40">Weight</p>
-            </div>
+        <div className="card flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold">Latest weight</p>
+            <p className="text-xs text-white/40">
+              {data?.latestBodyMetric?.date
+                ? new Date(data.latestBodyMetric.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+                : "No entries yet"}
+            </p>
           </div>
-          <Link to="/body" className="btn-secondary w-full text-center mt-3 block">
-            Open body &amp; health
-          </Link>
+          <div className="text-right">
+            <p className="text-2xl font-bold text-violet-400">
+              {data?.latestBodyMetric?.weightKg ? `${formatLb(data.latestBodyMetric.weightKg)}lb` : "—"}
+            </p>
+            <Link to="/body" className="text-xs text-white/50">
+              Open body →
+            </Link>
+          </div>
         </div>
       </div>
     </div>

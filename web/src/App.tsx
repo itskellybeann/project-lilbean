@@ -19,7 +19,6 @@ import Recipes from "./pages/nutrition/Recipes";
 import Trends from "./pages/nutrition/Trends";
 import BodyHome from "./pages/body/BodyHome";
 import ProgressPhotos from "./pages/body/ProgressPhotos";
-import HealthMetrics from "./pages/body/HealthMetrics";
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
@@ -71,7 +70,6 @@ export default function App() {
 
         <Route path="/body" element={<BodyHome />} />
         <Route path="/body/photos" element={<ProgressPhotos />} />
-        <Route path="/body/health" element={<HealthMetrics />} />
 
         <Route path="/settings" element={<Settings />} />
         <Route path="/household" element={<Household />} />

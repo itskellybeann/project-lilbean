@@ -21,7 +21,6 @@ exportRouter.get("/me", async (req: AuthedRequest, res) => {
     customFoods,
     bodyMetrics,
     progressPhotos,
-    healthMetrics,
     target,
     waterIntakes,
     goal,
@@ -42,7 +41,6 @@ exportRouter.get("/me", async (req: AuthedRequest, res) => {
     prisma.food.findMany({ where: { ownerUserId: userId } }),
     prisma.bodyMetric.findMany({ where: { userId }, orderBy: { date: "asc" } }),
     prisma.progressPhoto.findMany({ where: { userId }, orderBy: { date: "asc" } }),
-    prisma.healthMetric.findMany({ where: { userId }, orderBy: { date: "asc" } }),
     prisma.nutritionTarget.findUnique({ where: { userId } }),
     prisma.waterIntake.findMany({ where: { userId }, orderBy: { date: "asc" } }),
     prisma.userGoal.findUnique({ where: { userId } }),
@@ -60,7 +58,6 @@ exportRouter.get("/me", async (req: AuthedRequest, res) => {
     customFoods,
     bodyMetrics,
     progressPhotos,
-    healthMetrics,
     waterIntakes,
   };
 
