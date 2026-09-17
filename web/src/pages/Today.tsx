@@ -96,9 +96,9 @@ export default function Today() {
           <p className="text-sm font-semibold mb-3">Today's macros</p>
           <div className="flex justify-around">
             <MacroRing label="Cal" value={totals.calories} target={target.calories} unit="" color="#f5348c" />
-            <MacroRing label="Protein" value={totals.protein} target={target.protein} color="#ff85bd" />
-            <MacroRing label="Carbs" value={totals.carbs} target={target.carbs} color="#ffadd2" />
-            <MacroRing label="Fat" value={totals.fat} target={target.fat} color="#d81b70" />
+            <MacroRing label="Protein" value={totals.protein} target={target.protein} color="#2dd4bf" />
+            <MacroRing label="Carbs" value={totals.carbs} target={target.carbs} color="#fbbf24" />
+            <MacroRing label="Fat" value={totals.fat} target={target.fat} color="#a78bfa" />
           </div>
           <p className="text-center text-xs text-white/40 mt-2">
             💧 {((data?.waterMl ?? 0) / 1000).toFixed(2)}L water today
@@ -109,12 +109,12 @@ export default function Today() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <div className="card text-center">
+          <div className="card text-center border-bean-600/30 bg-gradient-to-br from-bean-500/10 to-transparent">
             <p className="text-2xl font-bold text-bean-400">🔥 {data?.streaks.workout ?? 0}</p>
             <p className="text-xs text-white/50 mt-1">Workout streak (days)</p>
           </div>
-          <div className="card text-center">
-            <p className="text-2xl font-bold text-bean-400">📔 {data?.streaks.logging ?? 0}</p>
+          <div className="card text-center border-teal-500/30 bg-gradient-to-br from-teal-400/10 to-transparent">
+            <p className="text-2xl font-bold text-teal-400">📔 {data?.streaks.logging ?? 0}</p>
             <p className="text-xs text-white/50 mt-1">Logging streak (days)</p>
           </div>
         </div>
@@ -123,17 +123,17 @@ export default function Today() {
           <p className="text-sm font-semibold mb-2">Ring &amp; body</p>
           <div className="grid grid-cols-3 gap-2 text-center">
             <div>
-              <p className="text-lg font-bold">
+              <p className="text-lg font-bold text-teal-400">
                 {data?.todayHealth?.sleepMinutes ? `${Math.round(data.todayHealth.sleepMinutes / 60)}h` : "—"}
               </p>
               <p className="text-[11px] text-white/40">Sleep</p>
             </div>
             <div>
-              <p className="text-lg font-bold">{data?.todayHealth?.restingHr ?? "—"}</p>
+              <p className="text-lg font-bold text-bean-400">{data?.todayHealth?.restingHr ?? "—"}</p>
               <p className="text-[11px] text-white/40">Resting HR</p>
             </div>
             <div>
-              <p className="text-lg font-bold">
+              <p className="text-lg font-bold text-violet-400">
                 {data?.latestBodyMetric?.weightKg ? `${formatLb(data.latestBodyMetric.weightKg)}lb` : "—"}
               </p>
               <p className="text-[11px] text-white/40">Weight</p>

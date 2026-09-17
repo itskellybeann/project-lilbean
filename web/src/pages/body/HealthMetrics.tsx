@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import TopBar from "../../components/TopBar";
 import { api } from "../../api/client";
 
@@ -96,7 +96,7 @@ export default function HealthMetrics() {
     <div>
       <TopBar title="Ring & sleep" />
       <div className="p-4 space-y-4">
-        <div className="card bg-bean-500/5 border-bean-700/50">
+        <div className="card bg-teal-500/5 border-teal-700/50">
           <p className="text-xs text-white/60 leading-relaxed">
             RingConn doesn't offer a public sync API, so there's no live auto-sync yet. Log a night manually below, or
             paste a CSV/JSON export from the RingConn app (or Apple Health / Google Fit, if you route it through
@@ -104,15 +104,18 @@ export default function HealthMetrics() {
           </p>
         </div>
 
-        {chartData.some((d) => d.sleep) && (
+        {chartData.some((d) => d.sleep || d.hr) && (
           <div className="card">
-            <p className="text-sm font-semibold mb-2">Sleep (hours)</p>
-            <ResponsiveContainer width="100%" height={160}>
+            <p className="text-sm font-semibold mb-2">Sleep (hrs) &amp; resting HR</p>
+            <ResponsiveContainer width="100%" height={180}>
               <LineChart data={chartData}>
                 <XAxis dataKey="date" stroke="#666" fontSize={10} tickLine={false} />
-                <YAxis stroke="#666" fontSize={11} tickLine={false} width={30} />
+                <YAxis yAxisId="sleep" stroke="#2dd4bf" fontSize={11} tickLine={false} width={30} />
+                <YAxis yAxisId="hr" orientation="right" stroke="#a78bfa" fontSize={11} tickLine={false} width={30} />
                 <Tooltip contentStyle={{ background: "#1a1a1d", border: "1px solid #333338", borderRadius: 8 }} />
-                <Line type="monotone" dataKey="sleep" stroke="#f5348c" strokeWidth={2} dot={false} connectNulls />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Line yAxisId="sleep" type="monotone" name="Sleep (hrs)" dataKey="sleep" stroke="#2dd4bf" strokeWidth={2} dot={false} connectNulls />
+                <Line yAxisId="hr" type="monotone" name="Resting HR" dataKey="hr" stroke="#a78bfa" strokeWidth={2} dot={false} connectNulls />
               </LineChart>
             </ResponsiveContainer>
           </div>

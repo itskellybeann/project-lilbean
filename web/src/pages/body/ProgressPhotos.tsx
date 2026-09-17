@@ -92,19 +92,22 @@ export default function ProgressPhotos() {
                 ))}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="relative grid grid-cols-2 gap-3">
               <div>
                 {beforePhoto && (
-                  <img src={beforePhoto.filePath} alt="before" className="rounded-xl w-full aspect-[3/4] object-cover" />
+                  <img src={beforePhoto.filePath} alt="before" className="rounded-xl w-full aspect-[3/4] object-cover border border-violet-500/30" />
                 )}
                 <p className="text-center text-xs text-white/40 mt-1">Before</p>
               </div>
               <div>
                 {afterPhoto && (
-                  <img src={afterPhoto.filePath} alt="after" className="rounded-xl w-full aspect-[3/4] object-cover" />
+                  <img src={afterPhoto.filePath} alt="after" className="rounded-xl w-full aspect-[3/4] object-cover border border-teal-400/30" />
                 )}
                 <p className="text-center text-xs text-white/40 mt-1">After</p>
               </div>
+              <span className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-teal-400 flex items-center justify-center text-[10px] font-bold text-white shadow-lg shadow-black/40 border-2 border-ink-950">
+                VS
+              </span>
             </div>
           </div>
         ) : (

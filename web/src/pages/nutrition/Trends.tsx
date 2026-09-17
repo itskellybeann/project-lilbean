@@ -47,9 +47,9 @@ export default function Trends() {
               <YAxis stroke="#666" fontSize={11} tickLine={false} width={40} />
               <Tooltip contentStyle={{ background: "#1a1a1d", border: "1px solid #333338", borderRadius: 8 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="protein" stackId="m" fill="#ff85bd" />
-              <Bar dataKey="carbs" stackId="m" fill="#ffadd2" />
-              <Bar dataKey="fat" stackId="m" fill="#d81b70" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="protein" stackId="m" fill="#2dd4bf" />
+              <Bar dataKey="carbs" stackId="m" fill="#fbbf24" />
+              <Bar dataKey="fat" stackId="m" fill="#a78bfa" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

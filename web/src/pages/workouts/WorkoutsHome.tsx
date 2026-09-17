@@ -39,24 +39,36 @@ export default function WorkoutsHome() {
           {starting ? "Starting…" : "+ Start empty workout"}
         </button>
 
-        <Link to="/workouts/routines" className="card block">
-          <p className="font-semibold">Routines</p>
-          <p className="text-white/50 text-sm">Your templates — start from one or build a new one</p>
+        <Link to="/workouts/routines" className="card flex items-center gap-3">
+          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-teal-400/15 text-xl shrink-0">🗂️</span>
+          <div>
+            <p className="font-semibold">Routines</p>
+            <p className="text-white/50 text-sm">Your templates — start from one or build a new one</p>
+          </div>
         </Link>
 
-        <Link to="/workouts/exercises" className="card block">
-          <p className="font-semibold">Exercise library</p>
-          <p className="text-white/50 text-sm">Browse exercises, PRs, and 1RM history</p>
+        <Link to="/workouts/exercises" className="card flex items-center gap-3">
+          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-violet-500/15 text-xl shrink-0">📚</span>
+          <div>
+            <p className="font-semibold">Exercise library</p>
+            <p className="text-white/50 text-sm">Browse exercises, PRs, and 1RM history</p>
+          </div>
         </Link>
 
-        <Link to="/workouts/history" className="card block">
-          <p className="font-semibold">History &amp; calendar</p>
-          <p className="text-white/50 text-sm">Past workouts and volume trends</p>
+        <Link to="/workouts/history" className="card flex items-center gap-3">
+          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-amber-500/15 text-xl shrink-0">🗓️</span>
+          <div>
+            <p className="font-semibold">History &amp; calendar</p>
+            <p className="text-white/50 text-sm">Past workouts and volume trends</p>
+          </div>
         </Link>
 
-        <Link to="/workouts/prs" className="card block">
-          <p className="font-semibold">PR feed</p>
-          <p className="text-white/50 text-sm">Every weight and 1RM personal record, in order</p>
+        <Link to="/workouts/prs" className="card flex items-center gap-3">
+          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-bean-500/15 text-xl shrink-0">🏆</span>
+          <div>
+            <p className="font-semibold">PR feed</p>
+            <p className="text-white/50 text-sm">Every weight and 1RM personal record, in order</p>
+          </div>
         </Link>
 
         {muscleVolume.length > 0 && (
@@ -67,7 +79,7 @@ export default function WorkoutsHome() {
                 <XAxis type="number" stroke="#666" fontSize={11} tickLine={false} />
                 <YAxis type="category" dataKey="muscleGroup" stroke="#999" fontSize={12} width={80} tickLine={false} />
                 <Tooltip contentStyle={{ background: "#1a1a1d", border: "1px solid #333338", borderRadius: 8 }} />
-                <Bar dataKey="volume" fill="#f5348c" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="volume" fill="#2dd4bf" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

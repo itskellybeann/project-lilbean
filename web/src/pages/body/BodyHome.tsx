@@ -23,6 +23,7 @@ function todayISO() {
 }
 
 const MEASUREMENT_LABELS: Record<string, string> = { waist: "Waist", chest: "Chest", arms: "Arms" };
+const MEASUREMENT_COLORS = ["#a78bfa", "#fbbf24", "#2dd4bf"];
 
 export default function BodyHome() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
@@ -103,11 +104,11 @@ export default function BodyHome() {
       <TopBar title="Body" />
       <div className="p-4 space-y-4">
         <div className="grid grid-cols-2 gap-3">
-          <Link to="/body/photos" className="card text-center">
+          <Link to="/body/photos" className="card text-center bg-gradient-to-br from-violet-500/10 to-transparent border-violet-500/25">
             <p className="text-2xl">📸</p>
             <p className="text-sm font-semibold mt-1">Progress photos</p>
           </Link>
-          <Link to="/body/health" className="card text-center">
+          <Link to="/body/health" className="card text-center bg-gradient-to-br from-teal-400/10 to-transparent border-teal-500/25">
             <p className="text-2xl">💍</p>
             <p className="text-sm font-semibold mt-1">Ring &amp; sleep data</p>
           </Link>
@@ -121,7 +122,7 @@ export default function BodyHome() {
                 <XAxis dataKey="date" stroke="#666" fontSize={11} tickLine={false} />
                 <YAxis stroke="#666" fontSize={11} tickLine={false} width={40} domain={["auto", "auto"]} />
                 <Tooltip contentStyle={{ background: "#1a1a1d", border: "1px solid #333338", borderRadius: 8 }} />
-                <Line type="monotone" dataKey="weight" stroke="#f5348c" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="weight" stroke="#2dd4bf" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -158,7 +159,7 @@ export default function BodyHome() {
         </div>
 
         {measurementCharts.map(
-          ({ key, data }) =>
+          ({ key, data }, i) =>
             data.length > 1 && (
               <div key={key} className="card">
                 <p className="text-sm font-semibold mb-2">{MEASUREMENT_LABELS[key] || key} over time (cm)</p>
@@ -167,7 +168,13 @@ export default function BodyHome() {
                     <XAxis dataKey="date" stroke="#666" fontSize={11} tickLine={false} />
                     <YAxis stroke="#666" fontSize={11} tickLine={false} width={35} domain={["auto", "auto"]} />
                     <Tooltip contentStyle={{ background: "#1a1a1d", border: "1px solid #333338", borderRadius: 8 }} />
-                    <Line type="monotone" dataKey="value" stroke="#ff85bd" strokeWidth={2} dot={false} />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke={MEASUREMENT_COLORS[i % MEASUREMENT_COLORS.length]}
+                      strokeWidth={2}
+                      dot={false}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

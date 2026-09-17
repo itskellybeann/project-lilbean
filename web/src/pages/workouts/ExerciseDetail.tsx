@@ -85,7 +85,7 @@ export default function ExerciseDetail() {
                 <XAxis dataKey="date" stroke="#666" fontSize={11} tickLine={false} />
                 <YAxis stroke="#666" fontSize={11} tickLine={false} width={40} />
                 <Tooltip contentStyle={{ background: "#1a1a1d", border: "1px solid #333338", borderRadius: 8 }} />
-                <Line type="monotone" dataKey="volume" stroke="#f5348c" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="volume" stroke="#2dd4bf" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

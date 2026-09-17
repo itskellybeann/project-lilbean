@@ -25,21 +25,24 @@ export default function PRFeed() {
       <TopBar title="PR feed" />
       <div className="p-4 space-y-3">
         {events.map((e, i) => (
-          <div key={i} className="card flex items-center justify-between">
-            <div>
-              <p className="font-semibold">{e.exerciseName}</p>
-              <p className="text-white/40 text-xs mt-0.5">
-                {new Date(e.date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} ·{" "}
-                {e.workoutName}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-bean-400 font-bold">
-                {e.type === "weight" ? `${formatLb(e.weightKg)}lb × ${e.reps}` : `${formatLb(e.value)}lb 1RM`}
-              </p>
-              <p className="text-white/30 text-[10px] uppercase tracking-wide">
-                {e.type === "weight" ? "Heaviest set" : "Est. 1RM"}
-              </p>
+          <div key={i} className="card flex items-center gap-3">
+            <span className="flex items-center justify-center w-9 h-9 rounded-full bg-amber-500/15 text-lg shrink-0">🏆</span>
+            <div className="flex-1 flex items-center justify-between">
+              <div>
+                <p className="font-semibold">{e.exerciseName}</p>
+                <p className="text-white/40 text-xs mt-0.5">
+                  {new Date(e.date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} ·{" "}
+                  {e.workoutName}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-bean-400 font-bold">
+                  {e.type === "weight" ? `${formatLb(e.weightKg)}lb × ${e.reps}` : `${formatLb(e.value)}lb 1RM`}
+                </p>
+                <p className="text-white/30 text-[10px] uppercase tracking-wide">
+                  {e.type === "weight" ? "Heaviest set" : "Est. 1RM"}
+                </p>
+              </div>
             </div>
           </div>
         ))}

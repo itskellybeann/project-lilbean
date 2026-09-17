@@ -74,11 +74,13 @@ async function main() {
       email: process.env.USER1_EMAIL || "kellyeads37@gmail.com",
       name: process.env.USER1_NAME || "Kelly",
       password: process.env.USER1_PASSWORD || crypto.randomBytes(9).toString("base64url"),
+      colorAccent: "pink",
     },
     {
       email: process.env.USER2_EMAIL || "partner@example.com",
       name: process.env.USER2_NAME || "Partner",
       password: process.env.USER2_PASSWORD || crypto.randomBytes(9).toString("base64url"),
+      colorAccent: "teal",
     },
   ];
 
@@ -90,7 +92,7 @@ async function main() {
       continue;
     }
     await prisma.user.create({
-      data: { email: u.email.toLowerCase(), name: u.name, passwordHash },
+      data: { email: u.email.toLowerCase(), name: u.name, passwordHash, colorAccent: u.colorAccent },
     });
     console.log(`Created user ${u.email} (name: ${u.name})`);
     if (!process.env[`USER1_PASSWORD`] && u === users[0]) {

@@ -92,15 +92,15 @@ export default function Diary() {
         <div className="card">
           <div className="flex justify-around">
             <MacroRing label="Cal" value={totals.calories} target={target.calories} unit="" color="#f5348c" />
-            <MacroRing label="Protein" value={totals.protein} target={target.protein} color="#ff85bd" />
-            <MacroRing label="Carbs" value={totals.carbs} target={target.carbs} color="#ffadd2" />
-            <MacroRing label="Fat" value={totals.fat} target={target.fat} color="#d81b70" />
+            <MacroRing label="Protein" value={totals.protein} target={target.protein} color="#2dd4bf" />
+            <MacroRing label="Carbs" value={totals.carbs} target={target.carbs} color="#fbbf24" />
+            <MacroRing label="Fat" value={totals.fat} target={target.fat} color="#a78bfa" />
           </div>
         </div>
 
-        <div className="card flex items-center justify-between">
+        <div className="card flex items-center justify-between border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-transparent">
           <div>
-            <p className="text-sm font-semibold">💧 Water</p>
+            <p className="text-sm font-semibold text-cyan-300">💧 Water</p>
             <p className="text-white/40 text-xs">
               {(waterMl / 1000).toFixed(2)}L / {(WATER_TARGET_ML / 1000).toFixed(1)}L
             </p>
@@ -109,7 +109,7 @@ export default function Diary() {
             <button className="btn-secondary px-3 py-1.5" onClick={() => adjustWater(-WATER_STEP_ML)} disabled={waterMl <= 0}>
               −
             </button>
-            <button className="btn-primary px-3 py-1.5" onClick={() => adjustWater(WATER_STEP_ML)}>
+            <button className="btn-teal px-3 py-1.5" onClick={() => adjustWater(WATER_STEP_ML)}>
               +{WATER_STEP_ML}ml
             </button>
           </div>

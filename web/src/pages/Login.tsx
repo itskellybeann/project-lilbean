@@ -28,7 +28,9 @@ export default function Login() {
     <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-ink-950">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="text-4xl mb-2">🫘</div>
+          <div className="mx-auto mb-3 w-16 h-16 rounded-2xl bg-gradient-to-br from-bean-500 to-teal-400 flex items-center justify-center text-3xl shadow-lg shadow-bean-900/30">
+            🫘
+          </div>
           <h1 className="text-2xl font-bold">
             Lil<span className="text-bean-500">Bean</span>
           </h1>
