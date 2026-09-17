@@ -66,13 +66,20 @@ exercisesRouter.get("/:id/stats", async (req: AuthedRequest, res) => {
   let lastWorkoutDate: Date | null = null;
 
   for (const s of sets) {
-    if (!heaviestSet || s.weightKg > heaviestSet.weightKg) {
+    // Comparing on weight alone means a bodyweight exercise (weightKg=0 for every set)
+    // can never update past its first-ever set no matter how many more reps it later
+    // gets — 0 > 0 is always false — so a tie on weight still counts if reps improved.
+    if (!heaviestSet || s.weightKg > heaviestSet.weightKg || (s.weightKg === heaviestSet.weightKg && s.reps > heaviestSet.reps)) {
       heaviestSet = { weightKg: s.weightKg, reps: s.reps, date: s.workout.startedAt };
     }
-    const est = estimate1RM(s.weightKg, s.reps);
-    if (est > best1RM) {
-      best1RM = est;
-      best1RMDate = s.workout.startedAt;
+    // The Epley estimate is definitionally 0 at weightKg=0, so skip it there rather
+    // than let a fixed 0 lock out tracking for a pure-bodyweight exercise.
+    if (s.weightKg > 0) {
+      const est = estimate1RM(s.weightKg, s.reps);
+      if (est > best1RM) {
+        best1RM = est;
+        best1RMDate = s.workout.startedAt;
+      }
     }
     const key = s.workoutId;
     const existing = volumeByWorkout.get(key);
@@ -96,7 +103,13 @@ exercisesRouter.get("/:id/stats", async (req: AuthedRequest, res) => {
     | null = null;
   if (lastWorkoutId) {
     const lastWorkoutSets = sets.filter((s) => s.workoutId === lastWorkoutId);
-    const topSet = lastWorkoutSets.reduce((best, s) => (s.weightKg > best.weightKg ? s : best), lastWorkoutSets[0]);
+    // Same weight-only comparison pitfall as above: for a bodyweight exercise every set
+    // ties at weightKg=0, so fall back to reps to find the actual best set of the day
+    // instead of always keeping the first set in the workout.
+    const topSet = lastWorkoutSets.reduce(
+      (best, s) => (s.weightKg > best.weightKg || (s.weightKg === best.weightKg && s.reps > best.reps) ? s : best),
+      lastWorkoutSets[0]
+    );
     if (topSet) {
       if (topSet.reps >= 8) {
         suggestion = {

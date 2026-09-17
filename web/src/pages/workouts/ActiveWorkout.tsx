@@ -19,12 +19,20 @@ interface SetRow {
   exercise: { name: string };
 }
 
+interface PlannedExercise {
+  exerciseId: string;
+  targetSets: number;
+  targetReps: string;
+  exercise: { name: string };
+}
+
 interface WorkoutData {
   id: string;
   name: string;
   startedAt: string;
   endedAt: string | null;
   sets: SetRow[];
+  routine: { id: string; name: string; exercises: PlannedExercise[] } | null;
 }
 
 interface ExerciseSuggestion {
@@ -272,6 +280,27 @@ export default function ActiveWorkout() {
             <p className="text-3xl font-bold tabular-nums">
               {Math.floor(timer.secondsLeft / 60)}:{String(timer.secondsLeft % 60).padStart(2, "0")}
             </p>
+          </div>
+        )}
+
+        {!isCompleted && !activeExercise && workout?.routine && workout.routine.exercises.length > 0 && (
+          <div className="card space-y-2">
+            <p className="text-xs uppercase tracking-wide text-white/40">{workout.routine.name} plan</p>
+            {workout.routine.exercises.map((pe) => {
+              const setsLogged = exerciseCounts.get(pe.exerciseId) || 0;
+              return (
+                <button
+                  key={pe.exerciseId}
+                  className="w-full flex items-center justify-between text-left"
+                  onClick={() => setActiveExercise({ id: pe.exerciseId, name: pe.exercise.name })}
+                >
+                  <span className={setsLogged > 0 ? "text-white/40 line-through" : ""}>{pe.exercise.name}</span>
+                  <span className="text-white/40 text-xs">
+                    {setsLogged}/{pe.targetSets} × {pe.targetReps}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         )}
 

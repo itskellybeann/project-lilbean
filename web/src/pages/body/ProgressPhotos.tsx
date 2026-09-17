@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import TopBar from "../../components/TopBar";
 import { api } from "../../api/client";
+import { todayLocalISO } from "../../lib/date";
 
 interface Photo {
   id: string;
@@ -9,13 +10,9 @@ interface Photo {
   notes: string | null;
 }
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 export default function ProgressPhotos() {
   const [photos, setPhotos] = useState<Photo[]>([]);
-  const [date, setDate] = useState(todayISO());
+  const [date, setDate] = useState(todayLocalISO());
   const [notes, setNotes] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);

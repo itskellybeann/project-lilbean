@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import TopBar from "../../components/TopBar";
 import { api } from "../../api/client";
 import { formatLb, kgToLb, lbToKg } from "../../lib/units";
+import { todayLocalISO } from "../../lib/date";
 
 interface Metric {
   id: string;
@@ -18,16 +19,12 @@ interface GoalResponse {
   projection: { currentRateKgPerWeek: number; projectedDate: string } | null;
 }
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 const MEASUREMENT_LABELS: Record<string, string> = { waist: "Waist", chest: "Chest", arms: "Arms" };
 const MEASUREMENT_COLORS = ["#a78bfa", "#fbbf24", "#2dd4bf"];
 
 export default function BodyHome() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
-  const [date, setDate] = useState(todayISO());
+  const [date, setDate] = useState(todayLocalISO());
   const [weightLb, setWeightLb] = useState("");
   const [bodyFatPct, setBodyFatPct] = useState("");
   const [waist, setWaist] = useState("");

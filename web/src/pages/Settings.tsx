@@ -4,6 +4,7 @@ import TopBar from "../components/TopBar";
 import { api } from "../api/client";
 import { useAuth } from "../state/auth";
 import { isSubscribed, pushSupported, sendTestPush, subscribeToPush, unsubscribeFromPush } from "../lib/push";
+import { todayLocalISO } from "../lib/date";
 
 interface Target {
   calories: number;
@@ -80,7 +81,7 @@ export default function Settings() {
   async function exportData() {
     setExporting(true);
     try {
-      await api.download("/export/me", `lilbean-export-${new Date().toISOString().slice(0, 10)}.json`);
+      await api.download("/export/me", `lilbean-export-${todayLocalISO()}.json`);
     } catch (err: any) {
       alert(err.message || "Export failed");
     } finally {
