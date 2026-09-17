@@ -153,7 +153,17 @@ export default function AddFood() {
   }
 
   function openRecipe(recipe: Recipe) {
-    setItemQty(Object.fromEntries(recipe.items.map((i) => [i.food.id, String(i.quantity)])));
+    // recipe.items store the *whole-batch* quantity (what macrosForRecipe divides by
+    // servings to get the per-serving figure shown in the picker) — default each field
+    // to one serving's worth, not the batch total, or logging as-is would double- (or
+    // servings-times-) count. Keyed by the RecipeItem's own id, not food id, since a
+    // recipe can list the same food in more than one row (e.g. oil split across steps).
+    const servings = recipe.servings || 1;
+    setItemQty(
+      Object.fromEntries(
+        recipe.items.map((i) => [i.id, String(Math.round((i.quantity / servings) * 100) / 100)])
+      )
+    );
     setLoggingRecipe(recipe);
   }
 
@@ -163,7 +173,7 @@ export default function AddFood() {
       date,
       meal,
       recipeId: loggingRecipe.id,
-      items: loggingRecipe.items.map((i) => ({ foodId: i.food.id, quantity: Number(itemQty[i.food.id] || 0) })),
+      items: loggingRecipe.items.map((i) => ({ foodId: i.food.id, quantity: Number(itemQty[i.id] || 0) })),
     });
     navigate("/nutrition");
   }
@@ -260,7 +270,7 @@ export default function AddFood() {
   if (loggingRecipe) {
     const totals = loggingRecipe.items.reduce(
       (acc, i) => {
-        const qty = Number(itemQty[i.food.id] || 0);
+        const qty = Number(itemQty[i.id] || 0);
         const factor = qty / i.food.servingSize;
         acc.calories += i.food.calories * factor;
         acc.protein += i.food.protein * factor;
@@ -282,8 +292,8 @@ export default function AddFood() {
                 <input
                   className="input w-20 text-right"
                   inputMode="decimal"
-                  value={itemQty[i.food.id] ?? ""}
-                  onChange={(e) => setItemQty((q) => ({ ...q, [i.food.id]: e.target.value }))}
+                  value={itemQty[i.id] ?? ""}
+                  onChange={(e) => setItemQty((q) => ({ ...q, [i.id]: e.target.value }))}
                 />
                 <span className="text-white/40 text-xs w-8">{i.food.servingUnit}</span>
               </div>

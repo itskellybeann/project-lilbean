@@ -116,6 +116,10 @@ nutritionRouter.post("/diary", async (req: AuthedRequest, res) => {
     }
   }
 
+  // `quantity` is left at its default of 1 for an item-overridden recipe log: once each
+  // ingredient can be scaled independently there's no single serving-multiplier left to
+  // record (macros are already computed and stored directly above). Don't repurpose this
+  // field to mean anything else for that case without also handling it in copy/export.
   const entry = await prisma.diaryEntry.create({
     data: {
       userId: req.userId!,
