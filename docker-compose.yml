@@ -48,11 +48,14 @@ services:
     depends_on:
       - server
     ports:
-      - "8080:8080"
+      # Override with WEB_PORT in .env if 8080 is already taken on your NAS —
+      # that file isn't part of this repo, so the override survives updates.
+      - "${WEB_PORT:-8080}:8080"
 
   db-backup:
     build: ./backup
     restart: unless-stopped
+    init: true
     depends_on:
       db:
         condition: service_healthy
