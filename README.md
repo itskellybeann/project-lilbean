@@ -120,7 +120,10 @@ This follows the same pattern as your other `/volume1/docker/<service>/` contain
    - `USER1_EMAIL` / `USER1_PASSWORD` and `USER2_EMAIL` / `USER2_PASSWORD` — real
      logins for the two of you (accounts are created once, on first boot)
    - `CORS_ORIGINS` — already set to your LAN IP and Tailscale IP on port 8080;
-     adjust if you use a different port or a domain name
+     adjust if you use a different port (see `WEB_PORT` below) or a domain name
+   - `WEB_PORT` — optional. Only needed if 8080 is already taken by something else
+     on your NAS (some NAS OSes reserve it internally) — set it to a free port
+     instead and update `CORS_ORIGINS` to match. Leave blank for the 8080 default.
    - `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` — optional, for push notifications.
      Generate a pair with `npx web-push generate-vapid-keys` (needs Node; run it
      anywhere, including your own laptop). Leave both blank to skip push entirely.
@@ -140,6 +143,7 @@ This follows the same pattern as your other `/volume1/docker/<service>/` contain
    - At home: `http://192.168.50.77:8080`
    - Away from home (Tailscale, no port forwarding needed): `http://100.76.202.22:8080`
    - Same access pattern as Immich — just a different port.
+   - (Substitute your own `WEB_PORT` above if you set one.)
 
 5. **Install it on your phone:** open the URL in Safari/Chrome, then "Add to Home
    Screen" (iOS) or "Install app" (Android/Chrome). It behaves like a native app —
@@ -165,12 +169,26 @@ gunzip -c backups/lilbean-YYYYMMDD-HHMMSS.sql.gz | docker compose exec -T db psq
 
 ### Updating
 
+If you cloned with git:
 ```sh
 git pull
 docker compose up -d --build
 ```
-Prisma runs `db push` on server startup, so schema changes in `server/prisma/schema.prisma`
-apply automatically — no manual migration step for this single-environment deployment.
+
+If you deployed from a downloaded ZIP/tarball instead (no git history on the NAS),
+re-pull the latest source over your existing folder — this only touches files tracked
+in the repo, so your `.env`, `./data/`, and `./backups/` are untouched:
+```sh
+cd /volume1/docker/<your-folder>
+curl -L https://github.com/<your-username>/project-lilbean/archive/refs/heads/main.tar.gz -o lilbean.tar.gz
+tar -xzf lilbean.tar.gz --strip-components=1
+rm lilbean.tar.gz
+docker compose up -d --build
+```
+
+Either way, Prisma runs `db push` on server startup, so schema changes in
+`server/prisma/schema.prisma` apply automatically — no manual migration step for this
+single-environment deployment.
 
 ## Local development
 
